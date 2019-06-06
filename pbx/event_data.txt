@@ -1595,3 +1595,547 @@ a=rtpmap:101 telephone-event/8000
 a=fmtp:101 0-16
 a=ptime:20
 a=sendrecv
+
+
+=========================================================================================
+
+2019/06/03 10:00:55 99bde202-3011-4104-9272-6d823aa90002 - event CHANNEL_EXECUTE_COMPLETE bridge {ignore_early_media=ring_ready,sip_h_Diversion=<sip:28324285@ip>}[leg_timeout=15]sofia/gateway/zqzj/13675017141|[leg_timeout=15]sofia/gateway/zqzj/83127866
+Content-Length: 9283
+Content-Type: text/event-plain
+.
+Event-Name: CHANNEL_EXECUTE_COMPLETE
+Core-UUID: 0c1a9bff-87b9-4754-a98b-22331bb5dece
+FreeSWITCH-Hostname: localhost.localdomain
+FreeSWITCH-Switchname: localhost.localdomain
+FreeSWITCH-IPv4: 192.168.1.88
+FreeSWITCH-IPv6: ::1
+Event-Date-Local: 2019-06-03 10:00:55
+Event-Date-GMT: Mon, 03 Jun 2019 02:00:55 GMT
+Event-Date-Timestamp: 1559527255566448
+Event-Calling-File: switch_core_session.c
+Event-Calling-Function: switch_core_session_exec
+Event-Calling-Line-Number: 2874
+Event-Sequence: 2422
+Channel-State: CS_EXECUTE
+Channel-Call-State: ACTIVE
+Channel-State-Number: 10
+Channel-Name: sofia/external/63368908@192.168.1.205
+Unique-ID: 99bde202-3011-4104-9272-6d823aa90002
+Call-Direction: inbound
+Presence-Call-Direction: inbound
+Channel-HIT-Dialplan: true
+Channel-Call-UUID: 99bde202-3011-4104-9272-6d823aa90002
+Answer-State: hangup
+Hangup-Cause: NORMAL_CLEARING
+Channel-Read-Codec-Name: PCMA
+Channel-Read-Codec-Rate: 8000
+Channel-Read-Codec-Bit-Rate: 64000
+Channel-Write-Codec-Name: PCMA
+Channel-Write-Codec-Rate: 8000
+Channel-Write-Codec-Bit-Rate: 64000
+Caller-Direction: inbound
+Caller-Logical-Direction: inbound
+Caller-Username: 63368908
+Caller-Dialplan: XML
+Caller-Caller-ID-Name: 63368908
+Caller-Caller-ID-Number: 63368908
+Caller-Orig-Caller-ID-Name: 63368908
+Caller-Orig-Caller-ID-Number: 63368908
+Caller-Callee-ID-Name: Outbound Call
+Caller-Callee-ID-Number: 83127866
+Caller-Network-Addr: 192.168.1.205
+Caller-ANI: 63368908
+Caller-Destination-Number: 28324285
+Caller-Unique-ID: 99bde202-3011-4104-9272-6d823aa90002
+Caller-Source: mod_sofia
+Caller-Context: public
+Caller-Channel-Name: sofia/external/63368908@192.168.1.205
+Caller-Profile-Index: 1
+Caller-Profile-Created-Time: 1559527213646410
+Caller-Channel-Created-Time: 1559527213646410
+Caller-Channel-Answered-Time: 1559527213686381
+Caller-Channel-Progress-Time: 0
+Caller-Channel-Progress-Media-Time: 1559527240946323
+Caller-Channel-Hangup-Time: 0
+Caller-Channel-Transfer-Time: 0
+Caller-Channel-Resurrect-Time: 0
+Caller-Channel-Bridged-Time: 1559527252886609
+Caller-Channel-Last-Hold: 0
+Caller-Channel-Hold-Accum: 0
+Caller-Screen-Bit: true
+Caller-Privacy-Hide-Name: false
+Caller-Privacy-Hide-Number: false
+Other-Type: originatee
+Other-Leg-Direction: outbound
+Other-Leg-Logical-Direction: inbound
+Other-Leg-Username: 63368908
+Other-Leg-Dialplan: XML
+Other-Leg-Caller-ID-Name: 63368908
+Other-Leg-Caller-ID-Number: 63368908
+Other-Leg-Orig-Caller-ID-Name: 63368908
+Other-Leg-Orig-Caller-ID-Number: 63368908
+Other-Leg-Callee-ID-Name: Outbound Call
+Other-Leg-Callee-ID-Number: 83127866
+Other-Leg-Network-Addr: 192.168.1.205
+Other-Leg-ANI: 63368908
+Other-Leg-Destination-Number: 83127866
+Other-Leg-Unique-ID: 43b6df2b-dc38-40aa-9a02-bfb75b3104c6
+Other-Leg-Source: mod_sofia
+Other-Leg-Context: public
+Other-Leg-Channel-Name: sofia/external/83127866
+Other-Leg-Profile-Created-Time: 1559527239026435
+Other-Leg-Channel-Created-Time: 1559527239026435
+Other-Leg-Channel-Answered-Time: 1559527247486447
+Other-Leg-Channel-Progress-Time: 0
+Other-Leg-Channel-Progress-Media-Time: 1559527240946323
+Other-Leg-Channel-Hangup-Time: 0
+Other-Leg-Channel-Transfer-Time: 0
+Other-Leg-Channel-Resurrect-Time: 0
+Other-Leg-Channel-Bridged-Time: 0
+Other-Leg-Channel-Last-Hold: 0
+Other-Leg-Channel-Hold-Accum: 0
+Other-Leg-Screen-Bit: true
+Other-Leg-Privacy-Hide-Name: false
+Other-Leg-Privacy-Hide-Number: false
+variable_direction: inbound
+variable_uuid: 99bde202-3011-4104-9272-6d823aa90002
+variable_session_id: 25
+variable_sip_from_user: 63368908
+variable_sip_from_uri: 63368908@192.168.1.205
+variable_sip_from_host: 192.168.1.205
+variable_video_media_flow: disabled
+variable_text_media_flow: disabled
+variable_channel_name: sofia/external/63368908@192.168.1.205
+variable_sip_local_network_addr: 218.104.238.162
+variable_sip_network_ip: 192.168.1.205
+variable_sip_network_port: 5060
+variable_sip_invite_stamp: 1559527213646410
+variable_sip_received_ip: 192.168.1.205
+variable_sip_received_port: 5060
+variable_sip_via_protocol: udp
+variable_sip_from_user_stripped: 63368908
+variable_sofia_profile_name: external
+variable_sofia_profile_url: sip:mod_sofia@192.168.1.88:5080
+variable_recovery_profile_name: external
+variable_sip_allow: INVITE, ACK, CANCEL, BYE, OPTIONS, INFO, UPDATE, PRACK
+variable_sip_req_user: 28324285
+variable_sip_req_uri: 28324285@192.168.1.88
+variable_sip_req_host: 192.168.1.88
+variable_sip_to_user: 28324285
+variable_sip_to_uri: 28324285@192.168.1.88
+variable_sip_to_host: 192.168.1.88
+variable_sip_contact_user: 63368908
+variable_sip_contact_uri: 63368908@192.168.1.205
+variable_sip_contact_host: 192.168.1.205
+variable_sip_via_host: 192.168.1.205
+variable_sip_via_rport: 5060
+variable_max_forwards: 70
+variable_switch_r_sdp: v=0
+o=sip-29.04.02.02 133198307 133198308 IN IP4 192.168.1.205
+s=-
+c=IN IP4 192.168.1.205
+t=0 0
+m=audio 16434 RTP/AVP 8 0 18 4 101
+a=rtpmap:8 PCMA/8000
+a=rtpmap:0 PCMU/8000
+a=rtpmap:18 G729/8000
+a=rtpmap:4 G723/8000
+a=rtpmap:101 telephone-event/8000
+a=fmtp:101 0-15
+a=ptime:20
+
+variable_ep_codec_string: CORE_PCM_MODULE.PCMA@8000h@20i@64000b,CORE_PCM_MODULE.PCMU@8000h@20i@64000b
+variable_DP_MATCH: ARRAY::28324285|:28324285
+variable_call_uuid: 99bde202-3011-4104-9272-6d823aa90002
+variable_outside_call: true
+variable_RFC2822_DATE: Mon, 03 Jun 2019 10:00:13 +0800
+variable_export_vars: RFC2822_DATE
+variable_rtp_use_codec_string: OPUS,G722,PCMU,PCMA,VP8
+variable_remote_audio_media_flow: sendrecv
+variable_audio_media_flow: sendrecv
+variable_rtp_audio_recv_pt: 8
+variable_rtp_use_codec_name: PCMA
+variable_rtp_use_codec_rate: 8000
+variable_rtp_use_codec_ptime: 20
+variable_rtp_use_codec_channels: 1
+variable_rtp_last_audio_codec_string: PCMA@8000h@20i@1c
+variable_read_codec: PCMA
+variable_original_read_codec: PCMA
+variable_read_rate: 8000
+variable_original_read_rate: 8000
+variable_write_codec: PCMA
+variable_write_rate: 8000
+variable_dtmf_type: rfc2833
+variable_local_media_ip: 192.168.1.88
+variable_local_media_port: 20020
+variable_advertised_media_ip: 192.168.1.88
+variable_rtp_use_timer_name: soft
+variable_rtp_use_pt: 8
+variable_rtp_use_ssrc: 3103445941
+variable_rtp_2833_send_payload: 101
+variable_rtp_2833_recv_payload: 101
+variable_remote_media_ip: 192.168.1.205
+variable_remote_media_port: 16434
+variable_hangup_after_bridge: true
+variable_rtp_local_sdp_str: v=0
+o=FreeSWITCH 1559507193 1559507195 IN IP4 192.168.1.88
+s=FreeSWITCH
+c=IN IP4 192.168.1.88
+t=0 0
+m=audio 20020 RTP/AVP 8 101
+a=rtpmap:8 PCMA/8000
+a=rtpmap:101 telephone-event/8000
+a=fmtp:101 0-16
+a=ptime:20
+a=sendrecv
+
+variable_endpoint_disposition: ANSWER
+variable_sip_to_tag: 1pNeHS1FD7UHB
+variable_sip_from_tag: 07c34c206f9a110b9b972f6820f7ab9d
+variable_sip_cseq: 242917463
+variable_sip_call_id: 98dbb48bd2aa9e601920b1b4c408a813@192.168.1.205
+variable_sip_full_via: SIP/2.0/UDP 192.168.1.205;branch=z9hG4bK16c9bc67df8956fb283d93fac03f5637;rport=5060
+variable_sip_full_from: <sip:63368908@192.168.1.205>;tag=07c34c206f9a110b9b972f6820f7ab9d
+variable_sip_full_to: <sip:28324285@192.168.1.88>;tag=1pNeHS1FD7UHB
+variable_read_result: success
+variable_foo_dtmf_digits: 801
+variable_originated_legs: ARRAY::cbe4df39-e467-4114-9fcc-0df4be33cfcb;Outbound Call;13675017141|:43b6df2b-dc38-40aa-9a02-bfb75b3104c6;Outbound Call;83127866
+variable_originate_causes: ARRAY::cbe4df39-e467-4114-9fcc-0df4be33cfcb;ALLOTTED_TIMEOUT|:43b6df2b-dc38-40aa-9a02-bfb75b3104c6;NONE
+variable_switch_m_sdp: v=0
+o=sip-29.04.02.02 133201692 133201693 IN IP4 192.168.1.205
+s=-
+c=IN IP4 192.168.1.205
+t=0 0
+m=audio 16432 RTP/AVP 8 101
+a=rtpmap:8 PCMA/8000
+a=rtpmap:101 telephone-event/8000
+a=fmtp:101 0-15
+a=ptime:20
+
+variable_originate_disposition: SUCCESS
+variable_DIALSTATUS: SUCCESS
+variable_current_application_data: /home/voices/rings/common/job_number_suffix.wav
+variable_current_application: playback
+variable_playback_last_offset_pos: 9595
+variable_playback_seconds: 1
+variable_playback_ms: 1199
+variable_playback_samples: 9595
+variable_current_application_response: FILE PLAYED
+variable_last_bridge_to: 43b6df2b-dc38-40aa-9a02-bfb75b3104c6
+variable_bridge_channel: sofia/external/83127866
+variable_bridge_uuid: 43b6df2b-dc38-40aa-9a02-bfb75b3104c6
+variable_signal_bond: 43b6df2b-dc38-40aa-9a02-bfb75b3104c6
+variable_last_sent_callee_id_name: Outbound Call
+variable_last_sent_callee_id_number: 83127866
+variable_sip_hangup_phrase: OK
+variable_last_bridge_hangup_cause: NORMAL_CLEARING
+variable_last_bridge_proto_specific_hangup_cause: sip:200
+variable_bridge_hangup_cause: NORMAL_CLEARING
+Application: bridge
+Application-Data: {ignore_early_media=ring_ready,sip_h_Diversion=<sip:28324285@ip>}[leg_timeout=15]sofia/gateway/zqzj/13675017141|[leg_timeout=15]sofia/gateway/zqzj/83127866
+Application-Response: FILE PLAYED
+Application-UUID: 58e216d5-665e-4eb7-8678-0a69bce29f89
+---------------------------------------------------------------------
+-- fail, 没有设置leg_timeout时，未接听电话
+variable_sip_invite_failure_status: 480
+variable_sip_invite_failure_phrase: Temporarily not available
+variable_sip_hangup_phrase: Temporarily not available
+variable_last_bridge_hangup_cause: NO_USER_RESPONSE
+variable_last_bridge_proto_specific_hangup_cause: sip:480
+variable_originate_disposition: NO_USER_RESPONSE
+variable_DIALSTATUS: NO_USER_RESPONSE
+variable_originate_causes: edbc5cd9-6c31-43b7-b5a3-165504d51f85;NO_USER_RESPONSE
+variable_originate_failed_cause: NO_USER_RESPONSE
+Application: bridge
+Application-Data: {ignore_early_media=ring_ready,sip_h_Diversion=<sip:28324285@ip>}sofia/gateway/zqzj/13675017141
+Application-Response: FILE PLAYED
+Application-UUID: 1cc6329b-dc30-4f80-a8ab-90e1dd103fef
+---------------------------------------------------------------------
+-- fail, 这个错误会直接挂断，所以在执行挂断，因为没有UUID而发生错误
+variable_last_bridge_hangup_cause: ALLOTTED_TIMEOUT
+variable_originate_disposition: ALLOTTED_TIMEOUT
+variable_DIALSTATUS: ALLOTTED_TIMEOUT
+variable_originate_causes: ff8e59a2-5019-4cb0-80c1-6a31de5ce0c6;ALLOTTED_TIMEOUT
+variable_originate_failed_cause: ALLOTTED_TIMEOUT
+Application: bridge
+Application-Data: {ignore_early_media=ring_ready,sip_h_Diversion=<sip:28324285@ip>}[leg_timeout=15]sofia/gateway/zqzj/13675017141
+Application-Response: FILE PLAYED
+Application-UUID: 56df3836-a22c-4a15-8fd3-45974ca114a5
+---------------------------------------------------------------------
+-- fail，主叫主动挂机，所以在执行挂断，因为没有UUID而发生错误
+variable_endpoint_disposition: ANSWER
+variable_originate_disposition: SUCCESS
+variable_DIALSTATUS: SUCCESS
+variable_originate_causes: 58ce6890-6ee4-4949-ba42-c6811807f278;NONE
+variable_sip_to_tag: Qya9geFeH8e3c
+variable_sip_from_tag: 71142a537b7e8a99baad2326d50f612c
+variable_sip_cseq: 242926314
+variable_sip_call_id: 1ebabd0cd0d75e6d858162f4c8c30db2@192.168.1.205
+variable_sip_full_via: SIP/2.0/UDP 192.168.1.205;branch=z9hG4bKe09d7dda2f89204395082fa5e2b62218;rport=5060
+variable_sip_full_from: <sip:63368908@192.168.1.205>;tag=71142a537b7e8a99baad2326d50f612c
+variable_sip_full_to: <sip:28324284@192.168.1.88>;tag=Qya9geFeH8e3c
+variable_current_application_data: /home/voices/rings/common/job_number_suffix.wav
+variable_current_application: playback
+variable_playback_last_offset_pos: 9595
+variable_playback_seconds: 1
+variable_playback_ms: 1199
+variable_playback_samples: 9595
+variable_current_application_response: FILE PLAYED
+variable_last_bridge_to: 58ce6890-6ee4-4949-ba42-c6811807f278
+variable_bridge_channel: sofia/external/13675017141
+variable_bridge_uuid: 58ce6890-6ee4-4949-ba42-c6811807f278
+variable_signal_bond: 58ce6890-6ee4-4949-ba42-c6811807f278
+variable_last_sent_callee_id_name: Outbound Call
+variable_last_sent_callee_id_number: 13675017141
+variable_sip_term_status: 200
+variable_proto_specific_hangup_cause: sip:200
+variable_sip_term_cause: 16
+variable_last_bridge_role: originator
+variable_sip_hangup_disposition: recv_bye
+variable_bridge_hangup_cause: NORMAL_CLEARING
+Application: bridge
+Application-Data: {ignore_early_media=ring_ready,originate_continue_on_timeout=true,sip_h_Diversion=<sip:28324284@ip>}[leg_timeout=15]sofia/gateway/zqzj/13675017141|[leg_timeout=15]sofia/gateway/zqzj/83127866
+Application-Response: FILE PLAYED
+Application-UUID: 399ee132-6ff8-45f7-8064-f352dbde6ad2
+---------------------------------------------------------------------
+
+
+==========================================================================================
+
+2019/06/03 11:36:52 2e6ae677-6195-4066-842d-ed6381b07418 - event CHANNEL_EXECUTE_COMPLETE read 1 1 /home/voices/rings/common/satisfy_survey.wav foo_satisfy_survey_digits 3000 #
+Content-Length: 9121
+Content-Type: text/event-plain
+.
+Event-Name: CHANNEL_EXECUTE_COMPLETE
+Core-UUID: 0c1a9bff-87b9-4754-a98b-22331bb5dece
+FreeSWITCH-Hostname: localhost.localdomain
+FreeSWITCH-Switchname: localhost.localdomain
+FreeSWITCH-IPv4: 192.168.1.88
+FreeSWITCH-IPv6: ::1
+Event-Date-Local: 2019-06-03 11:36:52
+Event-Date-GMT: Mon, 03 Jun 2019 03:36:52 GMT
+Event-Date-Timestamp: 1559533012946569
+Event-Calling-File: switch_core_session.c
+Event-Calling-Function: switch_core_session_exec
+Event-Calling-Line-Number: 2874
+Event-Sequence: 3639
+Channel-State: CS_EXECUTE
+Channel-Call-State: ACTIVE
+Channel-State-Number: 4
+Channel-Name: sofia/external/63368908@192.168.1.205
+Unique-ID: 2e6ae677-6195-4066-842d-ed6381b07418
+Call-Direction: inbound
+Presence-Call-Direction: inbound
+Channel-HIT-Dialplan: true
+Channel-Call-UUID: 2e6ae677-6195-4066-842d-ed6381b07418
+Answer-State: answered
+Channel-Read-Codec-Name: PCMA
+Channel-Read-Codec-Rate: 8000
+Channel-Read-Codec-Bit-Rate: 64000
+Channel-Write-Codec-Name: PCMA
+Channel-Write-Codec-Rate: 8000
+Channel-Write-Codec-Bit-Rate: 64000
+Caller-Direction: inbound
+Caller-Logical-Direction: inbound
+Caller-Username: 63368908
+Caller-Dialplan: XML
+Caller-Caller-ID-Name: 63368908
+Caller-Caller-ID-Number: 63368908
+Caller-Orig-Caller-ID-Name: 63368908
+Caller-Orig-Caller-ID-Number: 63368908
+Caller-Callee-ID-Name: Outbound Call
+Caller-Callee-ID-Number: 13675017141
+Caller-Network-Addr: 192.168.1.205
+Caller-ANI: 63368908
+Caller-Destination-Number: 28324284
+Caller-Unique-ID: 2e6ae677-6195-4066-842d-ed6381b07418
+Caller-Source: mod_sofia
+Caller-Context: public
+Caller-Channel-Name: sofia/external/63368908@192.168.1.205
+Caller-Profile-Index: 1
+Caller-Profile-Created-Time: 1559532982746375
+Caller-Channel-Created-Time: 1559532982746375
+Caller-Channel-Answered-Time: 1559532993766759
+Caller-Channel-Progress-Time: 0
+Caller-Channel-Progress-Media-Time: 1559532991066406
+Caller-Channel-Hangup-Time: 0
+Caller-Channel-Transfer-Time: 0
+Caller-Channel-Resurrect-Time: 0
+Caller-Channel-Bridged-Time: 1559532999206330
+Caller-Channel-Last-Hold: 0
+Caller-Channel-Hold-Accum: 0
+Caller-Screen-Bit: true
+Caller-Privacy-Hide-Name: false
+Caller-Privacy-Hide-Number: false
+Other-Type: originatee
+Other-Leg-Direction: outbound
+Other-Leg-Logical-Direction: inbound
+Other-Leg-Username: 63368908
+Other-Leg-Dialplan: XML
+Other-Leg-Caller-ID-Name: 63368908
+Other-Leg-Caller-ID-Number: 63368908
+Other-Leg-Orig-Caller-ID-Name: 63368908
+Other-Leg-Orig-Caller-ID-Number: 63368908
+Other-Leg-Callee-ID-Name: Outbound Call
+Other-Leg-Callee-ID-Number: 13675017141
+Other-Leg-Network-Addr: 192.168.1.205
+Other-Leg-ANI: 63368908
+Other-Leg-Destination-Number: 13675017141
+Other-Leg-Unique-ID: b38d4fbc-7549-412b-82a2-6635468200dc
+Other-Leg-Source: mod_sofia
+Other-Leg-Context: public
+Other-Leg-Channel-Name: sofia/external/13675017141
+Other-Leg-Profile-Created-Time: 1559532982786324
+Other-Leg-Channel-Created-Time: 1559532982786324
+Other-Leg-Channel-Answered-Time: 1559532993766759
+Other-Leg-Channel-Progress-Time: 0
+Other-Leg-Channel-Progress-Media-Time: 1559532991066406
+Other-Leg-Channel-Hangup-Time: 0
+Other-Leg-Channel-Transfer-Time: 0
+Other-Leg-Channel-Resurrect-Time: 0
+Other-Leg-Channel-Bridged-Time: 0
+Other-Leg-Channel-Last-Hold: 0
+Other-Leg-Channel-Hold-Accum: 0
+Other-Leg-Screen-Bit: true
+Other-Leg-Privacy-Hide-Name: false
+Other-Leg-Privacy-Hide-Number: false
+variable_direction: inbound
+variable_uuid: 2e6ae677-6195-4066-842d-ed6381b07418
+variable_session_id: 36
+variable_sip_from_user: 63368908
+variable_sip_from_uri: 63368908@192.168.1.205
+variable_sip_from_host: 192.168.1.205
+variable_video_media_flow: disabled
+variable_text_media_flow: disabled
+variable_channel_name: sofia/external/63368908@192.168.1.205
+variable_sip_local_network_addr: 218.104.238.162
+variable_sip_network_ip: 192.168.1.205
+variable_sip_network_port: 5060
+variable_sip_invite_stamp: 1559532982746375
+variable_sip_received_ip: 192.168.1.205
+variable_sip_received_port: 5060
+variable_sip_via_protocol: udp
+variable_sip_from_user_stripped: 63368908
+variable_sofia_profile_name: external
+variable_sofia_profile_url: sip:mod_sofia@192.168.1.88:5080
+variable_recovery_profile_name: external
+variable_sip_allow: INVITE, ACK, CANCEL, BYE, OPTIONS, INFO, UPDATE, PRACK
+variable_sip_req_user: 28324284
+variable_sip_req_uri: 28324284@192.168.1.88
+variable_sip_req_host: 192.168.1.88
+variable_sip_to_user: 28324284
+variable_sip_to_uri: 28324284@192.168.1.88
+variable_sip_to_host: 192.168.1.88
+variable_sip_contact_user: 63368908
+variable_sip_contact_uri: 63368908@192.168.1.205
+variable_sip_contact_host: 192.168.1.205
+variable_sip_via_host: 192.168.1.205
+variable_sip_via_rport: 5060
+variable_max_forwards: 70
+variable_switch_r_sdp: v=0
+o=sip-29.04.02.02 133775230 133775231 IN IP4 192.168.1.205
+s=-
+c=IN IP4 192.168.1.205
+t=0 0
+m=audio 16454 RTP/AVP 8 0 18 4 101
+a=rtpmap:8 PCMA/8000
+a=rtpmap:0 PCMU/8000
+a=rtpmap:18 G729/8000
+a=rtpmap:4 G723/8000
+a=rtpmap:101 telephone-event/8000
+a=fmtp:101 0-15
+a=ptime:20
+
+variable_ep_codec_string: CORE_PCM_MODULE.PCMA@8000h@20i@64000b,CORE_PCM_MODULE.PCMU@8000h@20i@64000b
+variable_DP_MATCH: ARRAY::28324284|:28324284
+variable_call_uuid: 2e6ae677-6195-4066-842d-ed6381b07418
+variable_outside_call: true
+variable_RFC2822_DATE: Mon, 03 Jun 2019 11:36:22 +0800
+variable_export_vars: RFC2822_DATE
+variable_rtp_use_codec_string: OPUS,G722,PCMU,PCMA,VP8
+variable_remote_audio_media_flow: sendrecv
+variable_audio_media_flow: sendrecv
+variable_rtp_audio_recv_pt: 8
+variable_rtp_use_codec_name: PCMA
+variable_rtp_use_codec_rate: 8000
+variable_rtp_use_codec_ptime: 20
+variable_rtp_use_codec_channels: 1
+variable_rtp_last_audio_codec_string: PCMA@8000h@20i@1c
+variable_original_read_codec: PCMA
+variable_original_read_rate: 8000
+variable_write_codec: PCMA
+variable_write_rate: 8000
+variable_dtmf_type: rfc2833
+variable_local_media_ip: 192.168.1.88
+variable_local_media_port: 19778
+variable_advertised_media_ip: 192.168.1.88
+variable_rtp_use_timer_name: soft
+variable_rtp_use_pt: 8
+variable_rtp_use_ssrc: 3103451710
+variable_rtp_2833_send_payload: 101
+variable_rtp_2833_recv_payload: 101
+variable_remote_media_ip: 192.168.1.205
+variable_remote_media_port: 16454
+variable_hangup_after_bridge: false
+variable_ringback: /home/voices/rings/pbx/testRing.wav
+variable_originated_legs: b38d4fbc-7549-412b-82a2-6635468200dc;Outbound Call;13675017141
+variable_switch_m_sdp: v=0
+o=sip-29.04.02.02 133776331 133776332 IN IP4 192.168.1.205
+s=-
+c=IN IP4 192.168.1.205
+t=0 0
+m=audio 16456 RTP/AVP 8 101
+a=rtpmap:8 PCMA/8000
+a=rtpmap:101 telephone-event/8000
+a=fmtp:101 0-15
+a=ptime:20
+
+variable_read_codec: PCMA
+variable_read_rate: 8000
+variable_rtp_local_sdp_str: v=0
+o=FreeSWITCH 1559513204 1559513206 IN IP4 192.168.1.88
+s=FreeSWITCH
+c=IN IP4 192.168.1.88
+t=0 0
+m=audio 19778 RTP/AVP 8 101
+a=rtpmap:8 PCMA/8000
+a=rtpmap:101 telephone-event/8000
+a=fmtp:101 0-16
+a=ptime:20
+a=sendrecv
+
+variable_endpoint_disposition: ANSWER
+variable_originate_disposition: SUCCESS
+variable_DIALSTATUS: SUCCESS
+variable_originate_causes: b38d4fbc-7549-412b-82a2-6635468200dc;NONE
+variable_sip_to_tag: ctBZ42tpD9gZa
+variable_sip_from_tag: 45b7b993e1166609082427d75df248de
+variable_sip_cseq: 242919707
+variable_sip_call_id: 35880b365251d0ffb7ff3a5fae8e759a@192.168.1.205
+variable_sip_full_via: SIP/2.0/UDP 192.168.1.205;branch=z9hG4bKb02f04b0a54aa0016e6da3c0f34f40e4;rport=5060
+variable_sip_full_from: <sip:63368908@192.168.1.205>;tag=45b7b993e1166609082427d75df248de
+variable_sip_full_to: <sip:28324284@192.168.1.88>;tag=ctBZ42tpD9gZa
+variable_last_bridge_to: b38d4fbc-7549-412b-82a2-6635468200dc
+variable_bridge_channel: sofia/external/13675017141
+variable_bridge_uuid: b38d4fbc-7549-412b-82a2-6635468200dc
+variable_signal_bond: b38d4fbc-7549-412b-82a2-6635468200dc
+variable_last_sent_callee_id_name: Outbound Call
+variable_last_sent_callee_id_number: 13675017141
+variable_sip_hangup_phrase: OK
+variable_last_bridge_hangup_cause: NORMAL_CLEARING
+variable_last_bridge_proto_specific_hangup_cause: sip:200
+variable_bridge_hangup_cause: NORMAL_CLEARING
+variable_current_loop: 1
+variable_total_loops: 1
+variable_current_application_data: 1 1 /home/voices/rings/common/satisfy_survey.wav foo_satisfy_survey_digits 3000 #
+variable_current_application: read
+variable_playback_last_offset_pos: 67152
+variable_playback_seconds: 8
+variable_playback_ms: 8394
+variable_playback_samples: 67152
+variable_read_result: success
+variable_foo_satisfy_survey_digits: 0
+Application: read
+Application-Data: 1 1 /home/voices/rings/common/satisfy_survey.wav foo_satisfy_survey_digits 3000 #
+Application-Response: _none_
+Application-UUID: 34022080-8bed-41be-9eda-96b226df42a4

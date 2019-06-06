@@ -2,59 +2,42 @@ package dialplan
 
 import (
 	"fmt"
+	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
-	"xiu/util"
+	"time"
 
 	"github.com/vma/esl"
 	// "xiu/pbx/controller"
+	"xiu/pbx/entity"
+	"xiu/pbx/util"
+	colorlog "xiu/util"
 )
 
-type Extension struct {
-	Field       string
-	Expression  string
-	Actions     []Action
-	IsSayJobnum bool
-}
-
-type Action struct {
-	Order    int64
-	App      string
-	Data     string
-	Sync     bool
-	Executed bool
-}
-
-type ByOrder []Action
-
-func (a ByOrder) Len() int           { return len(a) }
-func (a ByOrder) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a ByOrder) Less(i, j int) bool { return a[i].Order < a[j].Order }
-
-// [dialplanNumber]Extension
-var MapExt = make(map[string]Extension)
-
 func InitExtension() {
-	ext0 := Extension{
+	// modelExtension := controller.WriteExtensionToRedis()
+
+	ext0 := entity.Extension{
 		Field:      "destination_number",
 		Expression: "00000000",
-		Actions: []Action{
+		Actions: []entity.Action{
 			{
-				Order: 4,
+				Order: 1,
 				App:   "hangup",
 				Data:  "NO_ROUTE_DESTINATION",
 			},
 		},
 	}
-	sort.Sort(ByOrder(ext0.Actions))
-	ext1 := Extension{
+	sort.Sort(entity.ByOrder(ext0.Actions))
+	ext1 := entity.Extension{
 		Field:      "destination_number",
 		Expression: "28324284",
-		Actions: []Action{
+		Actions: []entity.Action{
 			{
 				Order: 1,
 				App:   "set",
-				Data:  "hangup_after_bridge=true",
+				Data:  "hangup_after_bridge=false",
 			},
 			{
 				Order: 2,
@@ -62,22 +45,24 @@ func InitExtension() {
 				Data:  "ringback=/home/voices/rings/pbx/testRing.wav",
 			},
 			{
-				Order: 4,
+				Order: 3,
 				App:   "bridge",
-				Data:  "{ignore_early_media=ring_ready,originate_continue_on_timeout=true,sip_h_Diversion=<sip:28324284@ip>}[leg_timeout=15]sofia/gateway/zqzj/13675017141", // |[leg_timeout=15]sofia/gateway/zqzj/83127866"
+				Data:  "{ignore_early_media=ring_ready,originate_continue_on_timeout=true,sip_h_Diversion=<sip:28324284@ip>}[leg_timeout=15]sofia/gateway/zqzj/13675017141|[leg_timeout=15]sofia/gateway/zqzj/83127866", // |[leg_timeout=15]sofia/gateway/zqzj/83127866"
 			},
 		},
+		IsRecord:    true,
 		IsSayJobnum: true,
+		// IsSatisfySurvey: true,
 	}
-	sort.Sort(ByOrder(ext1.Actions))
-	ext2 := Extension{
+	sort.Sort(entity.ByOrder(ext1.Actions))
+	ext2 := entity.Extension{
 		Field:      "destination_number",
 		Expression: "28324285",
-		Actions: []Action{
+		Actions: []entity.Action{
 			{
 				Order: 1,
 				App:   "set",
-				Data:  "hangup_after_bridge=true",
+				Data:  "hangup_after_bridge=false",
 			},
 			{
 				Order: 1,
@@ -91,22 +76,24 @@ func InitExtension() {
 				// Data: `3 3 3 6000 # /home/voices/rings/pbx/fu_xia_zhang_quan.wav /home/voices/rings/common/input_error.wav foo_dtmf_digits \d+ 3000`,
 			},
 		},
-		IsSayJobnum: true,
+		IsRecord:        true,
+		IsSayJobnum:     true,
+		IsSatisfySurvey: true,
 	}
-	sort.Sort(ByOrder(ext2.Actions))
-	MapExt["00000000"] = ext0
-	MapExt["28324284"] = ext1
-	MapExt["28324285"] = ext2
+	sort.Sort(entity.ByOrder(ext2.Actions))
+	entity.MapExt["00000000"] = ext0
+	entity.MapExt["28324284"] = ext1
+	entity.MapExt["28324285"] = ext2
 }
 
-func PrepareExtension(dialplanNumber string) <-chan Extension {
-	items := make(chan Extension)
+func PrepareExtension(dialplanNumber string) <-chan entity.Extension {
+	items := make(chan entity.Extension)
 	go func() {
-		var extension Extension
-		if ext, ok := MapExt[dialplanNumber]; ok {
+		var extension entity.Extension
+		if ext, ok := entity.MapExt[dialplanNumber]; ok {
 			extension = ext
 		} else {
-			extension = MapExt["00000000"]
+			extension = entity.MapExt["00000000"]
 		}
 		items <- extension
 		close(items)
@@ -114,7 +101,7 @@ func PrepareExtension(dialplanNumber string) <-chan Extension {
 	return items
 }
 
-func ExecuteExtension(con *esl.Connection, UId string, items <-chan Extension, hasIvr chan string) {
+func ExecuteExtension(con *esl.Connection, UId string, items <-chan entity.Extension, hasIvr chan string) {
 	go func() {
 		for item := range items {
 		END:
@@ -135,32 +122,8 @@ func ExecuteExtension(con *esl.Connection, UId string, items <-chan Extension, h
 	}()
 }
 
-type Menu struct {
-	Name         string //
-	Min          int    // Minimum number of digits to fetch (minimum value of 0)
-	Max          int    // Maximum number of digits to fetch (maximum value of 128)
-	Tries        int    // number of tries for the sound to play
-	Timeout      int    // Number of milliseconds to wait for a dialed response after the file playback ends and before PAGD does a retry.
-	Terminators  string //  digits used to end input if less than <max> digits have been pressed. If it starts with '=', then a terminator must be present for the input to be accepted (Since FS 1.2). (Typically '#', can be empty). Add '+' in front of terminating digit to always append it to the result variable specified in var_name.
-	File         string // Sound file to play to prompt for digits to be dialed by the caller; playback can be interrupted by the first dialed digit (can be empty or the special string "silence" to omit the message).
-	InvalidFile  string // Sound file to play when digits don't match the regexp (can be empty to omit the message).
-	VarName      string // Channel variable into which valid digits should be placed (optional, no variable is set by default. See also 'var_name_invalid' below).
-	Regexp       string // Regular expression to match digits (optional, an empty string allows all input (default)).
-	DigitTimeout int    // Inter-digit timeout; number of milliseconds allowed between digits in lieu of dialing a terminator digit; once this number is reached, PAGD assumes that the caller has no more digits to dial (optional, defaults to the value of <timeout>).
-	Entrys       []Entry
-}
-
-type Entry struct {
-	Action string
-	Digits string
-	Param  string
-}
-
-var MapMenu = make(map[string]Menu)
-var DtmfDigits = make(map[string]string)
-
 func InitIvrMenu() {
-	menu0 := Menu{
+	menu0 := entity.Menu{
 		Name:         "283242851000",
 		Min:          1,
 		Max:          1,
@@ -172,7 +135,7 @@ func InitIvrMenu() {
 		VarName:      `foo_dtmf_digits`,
 		Regexp:       `\d`,
 		DigitTimeout: 3000,
-		Entrys: []Entry{
+		Entrys: []entity.Entry{
 			{
 				Action: "menu-sub",
 				Digits: "1",
@@ -180,7 +143,7 @@ func InitIvrMenu() {
 			},
 		},
 	}
-	menu1 := Menu{
+	menu1 := entity.Menu{
 		Name:         "283242851002",
 		Min:          1,
 		Max:          1,
@@ -192,7 +155,7 @@ func InitIvrMenu() {
 		VarName:      `foo_dtmf_digits`,
 		Regexp:       `\d|\*`,
 		DigitTimeout: 3000,
-		Entrys: []Entry{
+		Entrys: []entity.Entry{
 			{
 				Action: "menu-sub",
 				Digits: "1",
@@ -205,7 +168,7 @@ func InitIvrMenu() {
 			},
 		},
 	}
-	menu2 := Menu{
+	menu2 := entity.Menu{
 		Name:         "283242851001",
 		Min:          1,
 		Max:          3,
@@ -217,16 +180,16 @@ func InitIvrMenu() {
 		VarName:      `foo_dtmf_digits`,
 		Regexp:       `\d{3}|\*`,
 		DigitTimeout: 3000,
-		Entrys: []Entry{
+		Entrys: []entity.Entry{
 			{
 				Action: "menu-exec-app",
 				Digits: "801",
-				Param:  "bridge {ignore_early_media=ring_ready,sip_h_Diversion=<sip:28324285@ip>}sofia/gateway/zqzj/13675017141",
+				Param:  "bridge {ignore_early_media=ring_ready,sip_h_Diversion=<sip:28324285@ip>}[leg_timeout=15]sofia/gateway/zqzj/13675017141|[leg_timeout=15]sofia/gateway/zqzj/83127866",
 			},
 			{
 				Action: "menu-exec-app",
 				Digits: "802",
-				Param:  "bridge {ignore_early_media=ring_ready,sip_h_Diversion=<sip:28324285@ip>}sofia/gateway/zqzj/17750409737",
+				Param:  "bridge {ignore_early_media=ring_ready,sip_h_Diversion=<sip:28324285@ip>}[leg_timeout=15]sofia/gateway/zqzj/83127866",
 			},
 			{
 				Action: "menu-top",
@@ -235,36 +198,36 @@ func InitIvrMenu() {
 			},
 		},
 	}
-	MapMenu["283242851000"] = menu0
-	MapMenu["283242851002"] = menu1
-	MapMenu["283242851001"] = menu2
+	entity.MapMenu["283242851000"] = menu0
+	entity.MapMenu["283242851002"] = menu1
+	entity.MapMenu["283242851001"] = menu2
 }
 
 func PrepareIvrMenu(dialplanNumber, ivrMenuExtension, dtmfDigits string) <-chan interface{} {
 	items := make(chan interface{})
 	go func() {
 		if dtmfDigits == "" { // 首层ivr处理
-			items <- MapMenu[ivrMenuExtension]
+			items <- entity.MapMenu[ivrMenuExtension]
 		} else if dtmfDigits == "digitTimeout" {
 			// 按键输入不完整，重新播放本层
-			items <- MapMenu[ivrMenuExtension]
+			items <- entity.MapMenu[ivrMenuExtension]
 		} else {
-			util.Info("dtmfDigits: %s", dtmfDigits)
+			colorlog.Info("dtmfDigits: %s", dtmfDigits)
 			digitNotFound := true
-			for _, entry := range MapMenu[ivrMenuExtension].Entrys {
+			for _, entry := range entity.MapMenu[ivrMenuExtension].Entrys {
 				if dtmfDigits == entry.Digits {
 					switch entry.Action {
 					case "menu-exec-app": // 执行app
 						params := strings.Split(entry.Param, " ")
-						action := Action{
+						action := entity.Action{
 							App:  params[0],
 							Data: params[1],
 						}
 						items <- action
 					case "menu-sub": // 跳到下层ivr
-						items <- MapMenu[entry.Param]
+						items <- entity.MapMenu[entry.Param]
 					case "menu-top": // 跳到上层ivr
-						items <- MapMenu[entry.Param]
+						items <- entity.MapMenu[entry.Param]
 					default:
 						items <- "action_not_found"
 					}
@@ -273,7 +236,7 @@ func PrepareIvrMenu(dialplanNumber, ivrMenuExtension, dtmfDigits string) <-chan 
 				}
 			}
 			if digitNotFound { // 按键输入错误，重新播放本层
-				items <- MapMenu[ivrMenuExtension]
+				items <- entity.MapMenu[ivrMenuExtension]
 			}
 		}
 		close(items)
@@ -285,7 +248,7 @@ func RepairMenuTimeout(con *esl.Connection, UId string, entrys <-chan interface{
 	go func() {
 		for entry := range entrys {
 			switch item := entry.(type) {
-			case Menu:
+			case entity.Menu:
 				if len(item.File) == 0 {
 					return
 				}
@@ -306,7 +269,7 @@ func ExecuteMenuEntry(con *esl.Connection, UId string, entrys <-chan interface{}
 	go func() {
 		for entry := range entrys {
 			switch item := entry.(type) {
-			case Menu:
+			case entity.Menu:
 				if len(item.File) == 0 {
 					return
 				}
@@ -315,8 +278,8 @@ func ExecuteMenuEntry(con *esl.Connection, UId string, entrys <-chan interface{}
 				data := `%d %d %d %d %s %s %s %s %s %d`
 				data = fmt.Sprintf(data, item.Min, item.Max, item.Tries, item.Timeout, item.Terminators, item.File, item.InvalidFile, item.VarName, item.Regexp, item.DigitTimeout)
 				con.Execute(app, UId, data)
-				DtmfDigits[UId] = item.Name
-			case Action:
+				entity.DtmfDigits[UId] = item.Name
+			case entity.Action:
 				con.Execute(item.App, UId, item.Data)
 				con.Execute("playback", UId, "/home/voices/rings/common/ivr_transfer.wav")
 			case string:
@@ -329,7 +292,7 @@ func ExecuteMenuEntry(con *esl.Connection, UId string, entrys <-chan interface{}
 	}()
 }
 
-func ExecuteIvrMenu(con *esl.Connection, UId string, items <-chan Menu) {
+func ExecuteIvrMenu(con *esl.Connection, UId string, items <-chan entity.Menu) {
 	go func() {
 		for item := range items {
 			if len(item.File) == 0 {
@@ -340,23 +303,16 @@ func ExecuteIvrMenu(con *esl.Connection, UId string, items <-chan Menu) {
 			data := `%d %d %d %d %s %s %s %s %s %d`
 			data = fmt.Sprintf(data, item.Min, item.Max, item.Tries, item.Timeout, item.Terminators, item.File, item.InvalidFile, item.VarName, item.Regexp, item.DigitTimeout)
 			con.Execute(app, UId, data)
-			DtmfDigits[UId] = item.Name
+			entity.DtmfDigits[UId] = item.Name
 		}
 	}()
-}
-
-// 报工号
-type SayJobnum struct {
-	PrefixFile string
-	SuffixFile string
-	Jobnum     []string
 }
 
 func PrepareSayJobnum(dialplanNumber string) <-chan interface{} {
 	items := make(chan interface{})
 	go func() {
-		if MapExt[dialplanNumber].IsSayJobnum == true {
-			sayJobnum := SayJobnum{
+		if entity.MapExt[dialplanNumber].IsSayJobnum == true {
+			sayJobnum := entity.SayJobnum{
 				PrefixFile: "/home/voices/rings/common/job_number_prefix.wav",
 				SuffixFile: "/home/voices/rings/common/job_number_suffix.wav",
 				Jobnum: []string{
@@ -375,21 +331,137 @@ func PrepareSayJobnum(dialplanNumber string) <-chan interface{} {
 }
 func ExecuteSayJobnum(con *esl.Connection, UId string, items <-chan interface{}) {
 	go func() {
+		var err error
 		for item := range items {
 			switch t := item.(type) {
-			case SayJobnum:
-				// con.ExecuteSync("playback", UId, t.PrefixFile)
-				// for _, val := range t.Jobnum {
-				// 	con.ExecuteSync("playback", UId, val)
-				// }
-				// con.ExecuteSync("playback", UId, t.SuffixFile)
+			case entity.SayJobnum:
+				con.ExecuteSync("playback", UId, t.PrefixFile)
+				for _, val := range t.Jobnum {
+					con.ExecuteSync("playback", UId, val)
+				}
+				_, err = con.ExecuteSync("playback", UId, t.SuffixFile)
+				if err != nil {
+					util.Error("dialplan/dialplan.go", "359", err)
+				}
 				// 直转的话，被叫先answer，所以先听到报工号，被叫说话，但主叫报工号还没完成，可以被打断。
 
-				con.Api("uuid_broadcast", UId+" "+t.PrefixFile+" both")
-				for _, val := range t.Jobnum {
-					con.Api("uuid_broadcast", UId+" "+val+" both")
-				}
-				con.Api("uuid_broadcast", UId+" "+t.SuffixFile+" both")
+				// uuid_broadcast <uuid> <path> [aleg|bleg|both]
+				// paramsFormat := `%s %s both`
+				// _, err = con.Api("uuid_broadcast", fmt.Sprintf(paramsFormat, UId, t.PrefixFile))
+				// if err != nil {
+				// 	util.Error("dialplan/dialplan.go", "349", err)
+				// }
+				// for _, val := range t.Jobnum {
+				// 	_, err = con.Api("uuid_broadcast", fmt.Sprintf(paramsFormat, UId, val))
+				// 	if err != nil {
+				// 		util.Error("dialplan/dialplan.go", "354", err)
+				// 	}
+				// }
+				// _, err = con.Api("uuid_broadcast", fmt.Sprintf(paramsFormat, UId, t.SuffixFile))
+				// if err != nil {
+				// 	util.Error("dialplan/dialplan.go", "359", err)
+				// }
+			}
+		}
+	}()
+}
+
+func PrepareSatisfySurvey(dialplanNumber string) <-chan interface{} {
+	items := make(chan interface{})
+	go func() {
+		if entity.MapExt[dialplanNumber].IsSatisfySurvey == true {
+			satisfySurvey := entity.SatisfySurvey{
+				PrefixFile: "/home/voices/rings/common/satisfy_survey.wav",
+				SuffixFile: "/home/voices/rings/common/satisfy_survey_end.wav",
+			}
+			items <- satisfySurvey
+		} else {
+			items <- "no_need_satisfy_survey"
+		}
+		close(items)
+	}()
+	return items
+}
+func ExecuteSatisfySurvey(con *esl.Connection, UId string, items <-chan interface{}) {
+	go func() {
+		for item := range items {
+			switch t := item.(type) {
+			case entity.SatisfySurvey:
+				params := `1 1 %s foo_satisfy_survey_digits 3000 #`
+				params = fmt.Sprintf(params, t.PrefixFile)
+				con.Execute("read", UId, params)
+			default:
+				con.Execute("hangup", UId, "")
+			}
+		}
+	}()
+}
+func HandleSatisfySurvey(con *esl.Connection, UId string, satisfySurveyDigits string) {
+	go func() {
+		if satisfySurveyDigits == "unknown" {
+			con.ExecuteSync("speak", UId, `tts_commandline|Mandarin|未收到按键，但还是谢谢您的评价！`)
+			con.Execute("hangup", UId, "")
+		} else {
+			switch satisfySurveyDigits {
+			case "1", "2", "3":
+				con.ExecuteSync("playback", UId, "/home/voices/rings/common/satisfy_survey_end.wav")
+			default:
+				con.ExecuteSync("speak", UId, `tts_commandline|Mandarin|按键按错了，但还是谢谢您的评价！`)
+			}
+			con.Execute("hangup", UId, "")
+			colorlog.Success("%s %s insert db success", UId, satisfySurveyDigits)
+		}
+	}()
+}
+
+func PrepareRecord(dialplanNumber, caller, callee string) <-chan interface{} {
+	items := make(chan interface{})
+	go func() {
+		if entity.MapExt[dialplanNumber].IsRecord == true {
+			// 路径前缀
+			commonPath := `/home/voices/records`
+
+			now := time.Now()
+			year, month, day := now.Date()
+			// 年文件夹
+			yearStr := strconv.Itoa(year)
+			// 月文件夹
+			monthStr := strconv.Itoa(int(month))
+			// 日文件夹
+			dayStr := strconv.Itoa(day)
+			// dialplanNumber文件夹
+			// 文件名: 主叫-被叫-时间
+			nowStr := now.Format("20060102150405000")
+			filename := `%s-%s-%s.wav`
+			filename = fmt.Sprintf(filename, caller, callee, nowStr)
+
+			filePath := filepath.Join(yearStr, monthStr, dayStr, dialplanNumber, filename)
+			record := entity.Record{
+				Name:       "record_file",
+				PrefixPath: commonPath,
+				File:       filePath,
+			}
+			items <- record
+		} else {
+			items <- "no_need_record"
+		}
+		close(items)
+	}()
+	return items
+}
+
+func ExecuteRecord(con *esl.Connection, UId string, items <-chan interface{}) {
+	go func() {
+		for item := range items {
+			switch t := item.(type) {
+			case entity.Record:
+				// uuid_setvar <uuid> <varname> [value]
+				paramsFormat := `%s %s %s`
+				con.BgApi("uuid_setvar", fmt.Sprintf(paramsFormat, UId, t.Name, t.File))
+				// uuid_record <uuid> [start|stop|mask|unmask] <path> [<limit>]
+				con.BgApi("uuid_record", fmt.Sprintf(paramsFormat, UId, "start", filepath.Join(t.PrefixPath, t.File)))
+			case string:
+
 			}
 		}
 	}()
