@@ -7,6 +7,9 @@ package main
 import (
 	"fmt"
 	"log"
+	"regexp"
+	"strconv"
+	"strings"
 
 	"github.com/vma/esl"
 	"xiu/pbx/dialplan"
@@ -80,9 +83,28 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 			dialplan.ExecuteExtension(con, ev.UId, items, hasIvr)
 			// 不再阻塞，继续执行ivr的情况
 			ivrMenuExtension := <-hasIvr
-			if ivrMenuExtension != "" {
+			re := regexp.MustCompile(`\d{7,8}1000`)
+			isIvr := re.Match([]byte(ivrMenuExtension))
+			if isIvr {
 				ivrMenu := dialplan.PrepareIvrMenu(destinationNumber, ivrMenuExtension, "")
 				dialplan.ExecuteMenuEntry(con, ev.UId, ivrMenu)
+			} else {
+				isOutline := true
+				bpIds := strings.Split(ivrMenuExtension, ",")
+				for _, id := range bpIds {
+					if _, err := strconv.Atoi(id); err != nil {
+						isOutline = false
+						break
+					}
+				}
+				util.Info("call_in.go", "98", isOutline)
+				if isOutline {
+					// 绑定号要进行实时的时间，区域筛选
+					callerNumber := ev.Get("Caller-Caller-ID-Number")
+					items := dialplan.PrepareBridge(destinationNumber, callerNumber, ivrMenuExtension)
+					dialplan.ExecuteBridge(con, ev.UId, items)
+				}
+
 			}
 
 			h.Caller[ev.UId] = 1

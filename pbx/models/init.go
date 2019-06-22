@@ -39,6 +39,14 @@ func TableName(name string) string {
 	return prefix + name
 }
 
+func BaseMobileLocationTBName() string {
+	return TableName("base_mobile_location")
+}
+
+func BlacklistTBName() string {
+	return TableName("call_blacklist")
+}
+
 func DialplanTBName() string {
 	return TableName("call_dialplans")
 }
@@ -61,4 +69,8 @@ func CallOperationTBName() string {
 
 func BindPhonerTBName() string {
 	return TableName("foo_bind_phoner")
+}
+
+func BindPhoneTimesetTBName() string {
+	return TableName("foo_bindphone_timeset")
 }
