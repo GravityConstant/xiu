@@ -3,7 +3,7 @@ package dialplan
 import (
 	"fmt"
 	"path/filepath"
-	// "sort"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -18,75 +18,74 @@ import (
 func InitExtension() {
 	controller.WriteExtensionToRedis()
 
-	// for _, ext := range entity.MapExt {
-	// 	util.Info("dialplan/dialplan.go", "26", ext)
-	// }
-	// ext0 := entity.Extension{
-	// 	Field:      "destination_number",
-	// 	Expression: "00000000",
-	// 	Actions: []entity.Action{
-	// 		{
-	// 			Order: 1,
-	// 			App:   "hangup",
-	// 			Data:  "NO_ROUTE_DESTINATION",
-	// 		},
-	// 	},
-	// }
-	// sort.Sort(entity.ByOrder(ext0.Actions))
-	// ext1 := entity.Extension{
-	// 	Field:      "destination_number",
-	// 	Expression: "28324284",
-	// 	Actions: []entity.Action{
-	// 		{
-	// 			Order: 1,
-	// 			App:   "set",
-	// 			Data:  "hangup_after_bridge=false",
-	// 		},
-	// 		{
-	// 			Order: 2,
-	// 			App:   "set", // 回铃太慢了
-	// 			Data:  "ringback=/home/voices/rings/pbx/testRing.wav",
-	// 		},
-	// 		{
-	// 			Order: 3,
-	// 			App:   "bridge",
-	// 			Data:  "{ignore_early_media=ring_ready,originate_continue_on_timeout=true,sip_h_Diversion=<sip:28324284@ip>}[leg_timeout=15]sofia/gateway/zqzj/13675017141|[leg_timeout=15]sofia/gateway/zqzj/83127866", // |[leg_timeout=15]sofia/gateway/zqzj/83127866"
-	// 		},
-	// 	},
-	// 	IsRecord:    true,
-	// 	IsSayJobnum: true,
-	// 	// IsSatisfySurvey: true,
-	// }
-	// sort.Sort(entity.ByOrder(ext1.Actions))
-	// ext2 := entity.Extension{
-	// 	Field:      "destination_number",
-	// 	Expression: "28324285",
-	// 	Actions: []entity.Action{
-	// 		{
-	// 			Order: 1,
-	// 			App:   "set",
-	// 			Data:  "hangup_after_bridge=false",
-	// 		},
-	// 		{
-	// 			Order: 1,
-	// 			App:   "answer",
-	// 		},
-	// 		{
-	// 			Order: 2,
-	// 			App:   "ivr", // play_and_get_digits
-	// 			Data:  "283242851000",
-	// 			// <min> <max> <tries> <timeout> <terminators> <file> <invalid_file>
-	// 			// Data: `3 3 3 6000 # /home/voices/rings/pbx/fu_xia_zhang_quan.wav /home/voices/rings/common/input_error.wav foo_dtmf_digits \d+ 3000`,
-	// 		},
-	// 	},
-	// 	IsRecord:        true,
-	// 	IsSayJobnum:     true,
-	// 	IsSatisfySurvey: true,
-	// }
-	// sort.Sort(entity.ByOrder(ext2.Actions))
-	// entity.MapExt["00000000"] = ext0
-	// entity.MapExt["28324284"] = ext1
-	// entity.MapExt["28324285"] = ext2
+	ext0 := entity.Extension{
+		Field:      "destination_number",
+		Expression: "00000000",
+		Actions: []entity.Action{
+			{
+				Order: 1,
+				App:   "hangup",
+				Data:  "NO_ROUTE_DESTINATION",
+			},
+		},
+	}
+	entity.MapExt["00000000"] = &ext0
+	return
+
+	ext1 := entity.Extension{
+		Field:      "destination_number",
+		Expression: "28324284",
+		Actions: []entity.Action{
+			{
+				Order: 1,
+				App:   "set",
+				Data:  "hangup_after_bridge=false",
+			},
+			{
+				Order: 2,
+				App:   "set", // 回铃太慢了
+				Data:  "ringback=/home/voices/rings/pbx/testRing.wav",
+			},
+			{
+				Order: 3,
+				App:   "bridge",
+				Data:  "{ignore_early_media=ring_ready,originate_continue_on_timeout=true,sip_h_Diversion=<sip:28324284@ip>}[leg_timeout=15]sofia/gateway/zqzj/13675017141|[leg_timeout=15]sofia/gateway/zqzj/83127866", // |[leg_timeout=15]sofia/gateway/zqzj/83127866"
+			},
+		},
+		IsRecord:    true,
+		IsSayJobnum: true,
+		// IsSatisfySurvey: true,
+	}
+	sort.Sort(entity.ByOrder(ext1.Actions))
+	ext2 := entity.Extension{
+		Field:      "destination_number",
+		Expression: "28324285",
+		Actions: []entity.Action{
+			{
+				Order: 1,
+				App:   "set",
+				Data:  "hangup_after_bridge=false",
+			},
+			{
+				Order: 1,
+				App:   "answer",
+			},
+			{
+				Order: 2,
+				App:   "ivr", // play_and_get_digits
+				Data:  "283242851000",
+				// <min> <max> <tries> <timeout> <terminators> <file> <invalid_file>
+				// Data: `3 3 3 6000 # /home/voices/rings/pbx/fu_xia_zhang_quan.wav /home/voices/rings/common/input_error.wav foo_dtmf_digits \d+ 3000`,
+			},
+		},
+		IsRecord:        true,
+		IsSayJobnum:     true,
+		IsSatisfySurvey: true,
+	}
+	sort.Sort(entity.ByOrder(ext2.Actions))
+
+	entity.MapExt["28324284"] = &ext1
+	entity.MapExt["28324285"] = &ext2
 }
 
 func PrepareExtension(dialplanNumber string) <-chan entity.Extension {
@@ -94,9 +93,9 @@ func PrepareExtension(dialplanNumber string) <-chan entity.Extension {
 	go func() {
 		var extension entity.Extension
 		if ext, ok := entity.MapExt[dialplanNumber]; ok {
-			extension = ext
+			extension = *ext
 		} else {
-			extension = entity.MapExt["00000000"]
+			extension = *entity.MapExt["00000000"]
 		}
 		items <- extension
 		close(items)
@@ -130,7 +129,7 @@ func ExecuteExtension(con *esl.Connection, UId string, items <-chan entity.Exten
 
 func InitIvrMenu() {
 	controller.WriteIvrMenuToRedis()
-
+	return
 	menu0 := entity.Menu{
 		Name:         "40004004261000",
 		Min:          1,
@@ -206,19 +205,19 @@ func InitIvrMenu() {
 			},
 		},
 	}
-	entity.MapMenu["40004004261000"] = menu0
-	entity.MapMenu["283242851002"] = menu1
-	entity.MapMenu["283242851001"] = menu2
+	entity.MapMenu["40004004261000"] = &menu0
+	entity.MapMenu["283242851002"] = &menu1
+	entity.MapMenu["283242851001"] = &menu2
 }
 
-func PrepareIvrMenu(dialplanNumber, ivrMenuExtension, dtmfDigits string) <-chan interface{} {
+func PrepareIvrMenu(dialplanNumber, callerNumber, ivrMenuExtension, dtmfDigits string) <-chan interface{} {
 	items := make(chan interface{})
 	go func() {
 		if dtmfDigits == "" { // 首层ivr处理
-			items <- entity.MapMenu[ivrMenuExtension]
+			items <- *entity.MapMenu[ivrMenuExtension]
 		} else if dtmfDigits == "digitTimeout" {
 			// 按键输入不完整，重新播放本层
-			items <- entity.MapMenu[ivrMenuExtension]
+			items <- *entity.MapMenu[ivrMenuExtension]
 		} else {
 			colorlog.Info("dtmfDigits: %s", dtmfDigits)
 			digitNotFound := true
@@ -227,15 +226,16 @@ func PrepareIvrMenu(dialplanNumber, ivrMenuExtension, dtmfDigits string) <-chan 
 					switch entry.Action {
 					case "menu-exec-app": // 执行app
 						params := strings.Split(entry.Param, " ")
-						action := entity.Action{
-							App:  params[0],
-							Data: params[1],
+						action := entity.MenuExecApp{
+							App:   params[0],
+							Data:  params[1],
+							Extra: []string{dialplanNumber, callerNumber},
 						}
 						items <- action
 					case "menu-sub": // 跳到下层ivr
-						items <- entity.MapMenu[entry.Param]
+						items <- *entity.MapMenu[entry.Param]
 					case "menu-top": // 跳到上层ivr
-						items <- entity.MapMenu[entry.Param]
+						items <- *entity.MapMenu[entry.Param]
 					default:
 						items <- "action_not_found"
 					}
@@ -287,8 +287,15 @@ func ExecuteMenuEntry(con *esl.Connection, UId string, entrys <-chan interface{}
 				data = fmt.Sprintf(data, item.Min, item.Max, item.Tries, item.Timeout, item.Terminators, item.File, item.InvalidFile, item.VarName, item.Regexp, item.DigitTimeout)
 				con.Execute(app, UId, data)
 				entity.DtmfDigits[UId] = item.Name
-			case entity.Action:
-				con.Execute(item.App, UId, item.Data)
+			case entity.MenuExecApp:
+				switch item.App {
+				case "bridge":
+					bridgeItem := PrepareBridge(item.Extra[0], item.Extra[1], item.Data)
+					ExecuteBridge(con, UId, bridgeItem)
+				default:
+					con.Execute(item.App, UId, item.Data)
+				}
+
 				con.Execute("playback", UId, "/home/voices/rings/common/ivr_transfer.wav")
 			case string:
 				con.ExecuteSync("playback", UId, "/home/voices/rings/pbx/no_number.wav")
@@ -316,20 +323,22 @@ func ExecuteIvrMenu(con *esl.Connection, UId string, items <-chan entity.Menu) {
 	}()
 }
 
-func PrepareSayJobnum(dialplanNumber string) <-chan interface{} {
+func PrepareSayJobnum(dialplanNumber, callee string) <-chan interface{} {
 	items := make(chan interface{})
 	go func() {
 		if entity.MapExt[dialplanNumber].IsSayJobnum == true {
-			sayJobnum := entity.SayJobnum{
-				PrefixFile: "/home/voices/rings/common/job_number_prefix.wav",
-				SuffixFile: "/home/voices/rings/common/job_number_suffix.wav",
-				Jobnum: []string{
-					"/home/voices/rings/common/1.wav",
-					"/home/voices/rings/common/0.wav",
-					"/home/voices/rings/common/0.wav",
-				},
+			jn := new(controller.Jobnum)
+			jn.GetCallString(dialplanNumber, callee)
+			if len(jn.RingPaths) > 0 {
+				sayJobnum := entity.SayJobnum{
+					PrefixFile: "/home/voices/rings/common/job_number_prefix.wav",
+					SuffixFile: "/home/voices/rings/common/job_number_suffix.wav",
+					Jobnum:     jn.RingPaths,
+				}
+				items <- sayJobnum
+			} else {
+				items <- "none_jobnum"
 			}
-			items <- sayJobnum
 		} else {
 			items <- "no_need_say_jobnum"
 		}
@@ -356,31 +365,37 @@ func ExecuteSayJobnum(con *esl.Connection, UId string, items <-chan interface{})
 				// }
 				// 直转的话，被叫先answer，所以先听到报工号，被叫说话，但主叫报工号还没完成，可以被打断。
 
+				// 使用file_string播放音乐
+				path := `file_string://%s!%s!%s`
+				var jobnumMusic string
+				for _, val := range t.Jobnum {
+					if len(jobnumMusic) == 0 {
+						jobnumMusic += val
+					} else {
+						jobnumMusic += `!` + val
+					}
+
+				}
+				path = fmt.Sprintf(path, t.PrefixFile, jobnumMusic, t.SuffixFile)
 				// uuid_broadcast <uuid> <path> [aleg|bleg|both]
 				paramsFormat := `%s %s both`
-				_, err = con.Api("uuid_broadcast", fmt.Sprintf(paramsFormat, UId, t.PrefixFile))
+				_, err = con.Api("uuid_broadcast", fmt.Sprintf(paramsFormat, UId, path))
 				if err != nil {
-					util.Error("dialplan/dialplan.go", "352", err)
-				}
-				for _, val := range t.Jobnum {
-					_, err = con.Api("uuid_broadcast", fmt.Sprintf(paramsFormat, UId, val))
-					if err != nil {
-						util.Error("dialplan/dialplan.go", "357", err)
-					}
-				}
-				_, err = con.Api("uuid_broadcast", fmt.Sprintf(paramsFormat, UId, t.SuffixFile))
-				if err != nil {
-					util.Error("dialplan/dialplan.go", "362", err)
+					util.Error("dialplan/dialplan.go", "370", err)
 				}
 			}
 		}
 	}()
 }
 
-func PrepareSatisfySurvey(dialplanNumber string) <-chan interface{} {
+func PrepareSatisfySurvey(dialplanNumber, callee string) <-chan interface{} {
 	items := make(chan interface{})
 	go func() {
-		if entity.MapExt[dialplanNumber].IsSatisfySurvey == true {
+		// if entity.MapExt[dialplanNumber].IsSatisfySurvey == true {
+		// 不在dialplan中取值了，而在绑定号中
+		ss := new(controller.SatisfySurvey)
+		ss.IsOpenSatisfySurvey(dialplanNumber, callee)
+		if ss.IsOpen {
 			satisfySurvey := entity.SatisfySurvey{
 				PrefixFile: "/home/voices/rings/common/satisfy_survey.wav",
 				SuffixFile: "/home/voices/rings/common/satisfy_survey_end.wav",
@@ -496,7 +511,7 @@ func PrepareBridge(dialplanNumber, callerNumber, bpIds string) <-chan interface{
 				Data: outcall.CallString,
 			}
 		}
-
+		colorlog.Info("outbound call: %s", outcall.CallString)
 		items <- bridge
 		close(items)
 	}()

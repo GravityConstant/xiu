@@ -21,5 +21,11 @@ type Entry struct {
 	Param  string
 }
 
-var MapMenu = make(map[string]Menu)
+type MenuExecApp struct {
+	App   string
+	Data  string
+	Extra []string
+}
+
+var MapMenu = make(map[string]*Menu)
 var DtmfDigits = make(map[string]string)

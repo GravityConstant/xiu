@@ -23,16 +23,16 @@ func init() {
 	// genome editing
 }
 
-type OpenTimeplanBindPhone struct {
-	Id     int64
-	IsRest bool
-}
-
 func (self *Outcall) GetCallString(diversion, caller, bpIds string) {
 	// `{originate_timeout=%d,sip_h_Diversion=<sip:%s@ip>}sofia/gateway/zqzj/13675017141`
 
+	// bpIds为空，直接返回
+	if len(bpIds) == 0 {
+		return
+	}
 	// 是否是黑名单
 	if count := models.IsCallBlacklist(diversion, caller); count > 0 {
+		util.Info("direct.go", "31", "call black worked")
 		return
 	}
 
@@ -44,7 +44,7 @@ func (self *Outcall) GetCallString(diversion, caller, bpIds string) {
 
 	areaWorkers := make([]<-chan models.BindPhone, len(bps))
 	for i, item := range bps {
-		areaWorkers[i] = filterBindPhoneArea(item)
+		areaWorkers[i] = filterBindPhoneArea(item, caller)
 	}
 	for t := range areaMerge(areaWorkers...) {
 		areaBindPhones = append(areaBindPhones, t)
@@ -61,8 +61,8 @@ func (self *Outcall) GetCallString(diversion, caller, bpIds string) {
 		timeplanBindPhones = append(timeplanBindPhones, t)
 	}
 
-	util.Info("direct.go", "61", areaBindPhones)
-	util.Info("direct.go", "62", timeplanBindPhones)
+	util.Info("direct.go", "area filtered", areaBindPhones)
+	util.Info("direct.go", "time filtered", timeplanBindPhones)
 
 	// 区域设置和时间设置都符合的才是最后要出局的号码
 	resultBindPhones := make([]models.BindPhone, 0)
@@ -92,14 +92,41 @@ func (self *Outcall) GetCallString(diversion, caller, bpIds string) {
 
 }
 
-func filterBindPhoneArea(item *models.BindPhone) <-chan models.BindPhone {
+func filterBindPhoneArea(item *models.BindPhone, caller string) <-chan models.BindPhone {
 	packages := make(chan models.BindPhone)
 	go func() {
 		if len(item.AreaDistrictNo) == 0 {
 			packages <- *item
 		} else {
-			name, value := PhoneAreaCode(strings.TrimSpace(item.BindPhone))
-			if count := models.IsExistAreaSetting(name, value); count > 0 {
+			// 得到主叫可以判断区域的前缀
+			name, value := PhoneAreaCode(strings.TrimSpace(caller))
+			util.Info("direct.go", "caller area code", name, value)
+			setAreas := strings.Split(item.AreaDistrictNo, ",")
+			var districtNos []string
+
+			var aTmp, dnTmp string
+			if name == "no" {
+				districtNos = models.GetMobileDistrictNo(value)
+			END:
+				for _, a := range setAreas {
+					aTmp = strings.TrimSpace(a)
+					for _, dn := range districtNos {
+						dnTmp = strings.TrimSpace(dn)
+						if aTmp == dnTmp {
+							packages <- *item
+							break END
+						}
+					}
+				}
+			} else if name == "district_no" {
+				for _, a := range setAreas {
+					aTmp = strings.TrimSpace(a)
+					if aTmp == value {
+						packages <- *item
+						break
+					}
+				}
+			} else {
 				packages <- *item
 			}
 		}

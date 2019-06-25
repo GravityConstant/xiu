@@ -63,6 +63,10 @@ func IvrMenuOptionTBName() string {
 	return TableName("call_ivr_menu_options")
 }
 
+func RingsTBName() string {
+	return TableName("call_rings")
+}
+
 func CallOperationTBName() string {
 	return TableName("call_operation")
 }

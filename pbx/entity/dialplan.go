@@ -25,4 +25,4 @@ func (a ByOrder) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a ByOrder) Less(i, j int) bool { return a[i].Order < a[j].Order }
 
 // [dialplanNumber]Extension
-var MapExt = make(map[string]Extension)
+var MapExt = make(map[string]*Extension)

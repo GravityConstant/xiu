@@ -2,6 +2,8 @@ package models
 
 import (
 	"fmt"
+
+	"xiu/pbx/util"
 )
 
 type BindPhone struct {
@@ -24,7 +26,9 @@ func GetBindPhoneByDialplan(bpIds string) []*BindPhone {
 	sql = fmt.Sprintf(sql, DialplanTBName(), BindPhonerTBName(), bpIds)
 
 	dds := make([]*BindPhone, 0)
-	ImplInstance.DB.Raw(sql).Scan(&dds)
+	if err := ImplInstance.DB.Raw(sql).Scan(&dds).Error; err != nil {
+		util.Error("models/bind_phone.go", "query bind phone error", err)
+	}
 
 	return dds
 }
@@ -43,7 +47,9 @@ func GetBindPhoneTimesetById(id int64, isRest bool) []BindPhoneTimeset {
 	sql = fmt.Sprintf(sql, BindPhoneTimesetTBName(), id, not)
 
 	var valids []BindPhoneTimeset
-	ImplInstance.DB.Raw(sql).Scan(&valids)
+	if err := ImplInstance.DB.Raw(sql).Scan(&valids).Error; err != nil {
+		util.Error("models/bind_phone.go", "query bind phone timeset error", err)
+	}
 
 	return valids
 }
@@ -54,9 +60,21 @@ func IsExistAreaSetting(name, value string) int {
 	sql = fmt.Sprintf(sql, BaseMobileLocationTBName(), name, value)
 
 	var count int
-	ImplInstance.DB.Raw(sql).Count(&count)
+	if err := ImplInstance.DB.Raw(sql).Count(&count).Error; err != nil {
+		util.Error("models/bind_phone.go", "query area count error", err)
+	}
 
 	return count
+}
+
+func GetMobileDistrictNo(no string) []string {
+	// SELECT CURRENT_TIME::time without time zone
+	var districtNos []string
+	if err := ImplInstance.DB.Table(BaseMobileLocationTBName()).Where("no=?", no).Pluck("district_no", &districtNos).Error; err != nil {
+		util.Error("models/bind_phone.go", "query bind phone district_no error", err)
+	}
+
+	return districtNos
 }
 
 // 是否是黑名单
@@ -65,7 +83,37 @@ func IsCallBlacklist(dialplanNumber, caller string) int {
 	sql = fmt.Sprintf(sql, BlacklistTBName())
 
 	var count int
-	ImplInstance.DB.Raw(sql, dialplanNumber, caller).Count(&count)
+	if err := ImplInstance.DB.Raw(sql, dialplanNumber, caller).Count(&count).Error; err != nil {
+		util.Error("models/bind_phone.go", "query blacklist error", err)
+	}
 
 	return count
+}
+
+// 获取工号
+func GetJobnumString(dialplanNumber, callee string) string {
+	sql := `SELECT bp.jobnum from %s d, %s bp where d.id=bp.phone_id and d.dialplan_number=? and bp.bind_phone=?`
+	sql = fmt.Sprintf(sql, DialplanTBName(), BindPhonerTBName())
+
+	var jobnum []string
+	if err := ImplInstance.DB.Raw(sql, dialplanNumber, callee).Pluck("jobnum", &jobnum).Error; err != nil {
+		util.Error("models/bind_phone.go", "query job num error", err)
+		return ""
+	} else {
+		return jobnum[0]
+	}
+}
+
+// 获取是否开启满意度状态
+func GetOpenSatisfySurvey(dialplanNumber, callee string) bool {
+	sql := `SELECT bp.open_satisfy_survey from %s d, %s bp where d.id=bp.phone_id and d.dialplan_number=? and bp.bind_phone=?`
+	sql = fmt.Sprintf(sql, DialplanTBName(), BindPhonerTBName())
+
+	var value []bool
+	if err := ImplInstance.DB.Raw(sql, dialplanNumber, callee).Pluck("open_satisfy_survey", &value).Error; err != nil {
+		util.Error("models/bind_phone.go", "query satisfy survey error", err)
+		return false
+	} else {
+		return value[0]
+	}
 }

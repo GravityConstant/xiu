@@ -5,11 +5,17 @@ freeswitch命令：https://freeswitch.org/confluence/display/FREESWITCH/mod_comm
 package main
 
 import (
+	"context"
+	"flag"
 	"fmt"
 	"log"
+	"os"
+	"os/signal"
 	"regexp"
+	"runtime/pprof"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/vma/esl"
 	"xiu/pbx/dialplan"
@@ -17,6 +23,8 @@ import (
 	"xiu/pbx/models"
 	"xiu/pbx/util"
 )
+
+var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 
 type Handler struct {
 	Caller map[string]int
@@ -39,20 +47,54 @@ func init() {
 }
 
 func main() {
-	handler := &Handler{}
-	handler.Caller = make(map[string]int)
+	var wait time.Duration
+	flag.DurationVar(&wait, "graceful-timeout", time.Second*15, "the duration for which the server gracefully wait for existing connections to finish - e.g. 15s or 1m")
+	// CPU性能监测
+	flag.Parse()
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.StartCPUProfile(f)
 
-	con, err := esl.NewConnection("127.0.0.1:8021", handler)
-	if err != nil {
-		log.Fatal("ERR connecting to freeswitch:", err)
-	}
-	fmt.Println("////////////////////////////////////////////////////")
-	fmt.Println("//                event                           //")
-	fmt.Println("////////////////////////////////////////////////////")
-	if err := con.HandleEvents(); err != nil {
-		util.Fatal("call_in.go", "50", err)
 	}
 
+	// business code
+	go func() {
+		fmt.Println("////////////////////////////////////////////////////")
+		fmt.Println("//                event                           //")
+		fmt.Println("////////////////////////////////////////////////////")
+		handler := &Handler{}
+		handler.Caller = make(map[string]int)
+
+		con, err := esl.NewConnection("127.0.0.1:8021", handler)
+		if err != nil {
+			log.Fatal("ERR connecting to freeswitch:", err)
+		}
+		if err := con.HandleEvents(); err != nil {
+			util.Fatal("call_in.go", "53", err)
+		}
+	}()
+
+	// 优雅的退出CTRL+C
+	c := make(chan os.Signal, 1)
+	// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
+	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught.
+	signal.Notify(c, os.Interrupt)
+	// Block until we receive our signal.
+	<-c
+	// Create a deadline to wait for.
+	_, cancel := context.WithTimeout(context.Background(), wait)
+	defer cancel()
+	// stop profile
+	fmt.Println("////////////////////////////////////////////////////")
+	fmt.Println("//                end                             //")
+	fmt.Println("////////////////////////////////////////////////////")
+	pprof.StopCPUProfile()
+
+	log.Println("shutting down")
+	os.Exit(0)
 }
 
 func (h *Handler) OnConnect(con *esl.Connection) {
@@ -73,6 +115,8 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 	switch ev.Name {
 	case esl.CHANNEL_CREATE:
 		destinationNumber := ev.Get("Caller-Destination-Number")
+		// 主叫号码
+		callerNumber := ev.Get("Caller-Caller-ID-Number")
 		direction := ev.Get("Call-Direction")
 
 		if _, ok := h.Caller[ev.UId]; !ok && direction == "inbound" {
@@ -86,7 +130,7 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 			re := regexp.MustCompile(`\d{7,8}1000`)
 			isIvr := re.Match([]byte(ivrMenuExtension))
 			if isIvr {
-				ivrMenu := dialplan.PrepareIvrMenu(destinationNumber, ivrMenuExtension, "")
+				ivrMenu := dialplan.PrepareIvrMenu(destinationNumber, callerNumber, ivrMenuExtension, "")
 				dialplan.ExecuteMenuEntry(con, ev.UId, ivrMenu)
 			} else {
 				isOutline := true
@@ -97,10 +141,9 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 						break
 					}
 				}
-				util.Info("call_in.go", "98", isOutline)
+				util.Info("call_in.go", "is out line?", isOutline)
 				if isOutline {
 					// 绑定号要进行实时的时间，区域筛选
-					callerNumber := ev.Get("Caller-Caller-ID-Number")
 					items := dialplan.PrepareBridge(destinationNumber, callerNumber, ivrMenuExtension)
 					dialplan.ExecuteBridge(con, ev.UId, items)
 				}
@@ -110,6 +153,11 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 			h.Caller[ev.UId] = 1
 		}
 	case esl.CHANNEL_EXECUTE_COMPLETE:
+		// 主叫号码
+		callerNumber := ev.Get("Caller-Caller-ID-Number")
+		// 被叫号码
+		calleeNumber := ev.Get("Caller-Callee-ID-Number")
+		// ivr menu
 		if ev.App == "play_and_get_digits" {
 			// fmt.Println(ev)
 			resultDTMF := ev.Get("variable_read_result")
@@ -118,18 +166,18 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 				destinationNumber := ev.Get("Caller-Destination-Number")
 				// dialplan.MapMenu[entity.DtmfDigits[ev.UId]]
 				// direction := ev.Get("Call-Direction")
-				items := dialplan.PrepareIvrMenu(destinationNumber, entity.DtmfDigits[ev.UId], dtmfDigits)
+				items := dialplan.PrepareIvrMenu(destinationNumber, callerNumber, entity.DtmfDigits[ev.UId], dtmfDigits)
 				dialplan.ExecuteMenuEntry(con, ev.UId, items)
 			} else if resultDTMF == "timeout" {
 				dtmfDigits := ev.Get("variable_foo_dtmf_digits")
 				destinationNumber := ev.Get("Caller-Destination-Number")
 				switch dtmfDigits {
 				case "*": // 最大长度大于1，*后不按#会超时，处理返回上级ivr
-					items := dialplan.PrepareIvrMenu(destinationNumber, entity.DtmfDigits[ev.UId], dtmfDigits)
+					items := dialplan.PrepareIvrMenu(destinationNumber, callerNumber, entity.DtmfDigits[ev.UId], dtmfDigits)
 					dialplan.ExecuteMenuEntry(con, ev.UId, items)
 				default:
 					// 默认如果没有严格的正则表达式，不会播放输入错误的提示，输入按键不够的话，只能再次播放本层ivr
-					items := dialplan.PrepareIvrMenu(destinationNumber, entity.DtmfDigits[ev.UId], "digitTimeout")
+					items := dialplan.PrepareIvrMenu(destinationNumber, callerNumber, entity.DtmfDigits[ev.UId], "digitTimeout")
 					dialplan.ExecuteMenuEntry(con, ev.UId, items)
 				}
 			} else if resultDTMF == "failure" {
@@ -145,13 +193,13 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 				switch dialStatus {
 				case "SUCCESS":
 					destinationNumber := ev.Get("Caller-Destination-Number")
-					items := dialplan.PrepareSatisfySurvey(destinationNumber)
+					items := dialplan.PrepareSatisfySurvey(destinationNumber, calleeNumber)
 					dialplan.ExecuteSatisfySurvey(con, ev.UId, items)
 				case "ALLOTTED_TIMEOUT":
 					// freeswitch自己挂断了。没有UUID，再次执行发生错误
 				case "NO_USER_RESPONSE":
 					if _, err := con.Execute("hangup", ev.UId, ""); err != nil {
-						util.Error("call_in.go", "132", err)
+						util.Error("call_in.go", "160", err)
 					}
 				}
 			}
@@ -190,7 +238,7 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 			record := dialplan.PrepareRecord(dialplanNumber, caller, callee)
 			dialplan.ExecuteRecord(con, callUId, record)
 			// 报工号
-			blegJobnum := dialplan.PrepareSayJobnum(dialplanNumber)
+			blegJobnum := dialplan.PrepareSayJobnum(dialplanNumber, callee)
 			dialplan.ExecuteSayJobnum(con, callUId, blegJobnum)
 		}
 	case esl.DTMF:
