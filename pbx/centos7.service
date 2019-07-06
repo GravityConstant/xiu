@@ -1,0 +1,15 @@
+[Unit]
+Description=zqpbx service
+After=postgresql-10.service freeswitch.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/fsgui/zqpbx
+ExecStart=/usr/bin/nohup ./call_in &
+ExecStop=/usr/bin/killall call_in
+TimeoutSec=45s
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

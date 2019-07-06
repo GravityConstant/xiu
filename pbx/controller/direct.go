@@ -32,10 +32,10 @@ func (self *Outcall) GetCallString(diversion, caller, bpIds string) {
 	}
 	// 是否是黑名单
 	if count := models.IsCallBlacklist(diversion, caller); count > 0 {
-		util.Info("direct.go", "31", "call black worked")
+		util.Info("direct.go", "callblack worked", caller)
 		return
 	}
-
+	util.Info("direct.go", "caller number", caller)
 	// 获取bind_phoner表里的记录
 	bps := models.GetBindPhoneByDialplan(bpIds)
 

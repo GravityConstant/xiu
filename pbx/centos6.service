@@ -1,0 +1,62 @@
+#!/bin/bash
+#
+# chkconfig: - 99 32
+# description: pbx
+#
+# Library
+if [ -f /etc/init.d/functions ]; then
+        . /etc/init.d/functions
+elif [ -f /etc/rc.d/init.d/functions ]; then
+        . /etc/rc.d/init.d/functions
+fi
+# Path
+LOGDIR=/opt/fsgui/zqpbx
+ZQ_400_LOG=$LOGDIR/zq_pbx.log
+prog=call_in
+execbase=/opt/fsgui/zqpbx/
+execpath="${execbase}${prog} "
+pidfile=/var/run/${prog}.pid
+lockfile=/var/lock/subsys/${prog}
+RETVAL=0
+# Service
+start() {
+        echo -n $"Starting $prog: "
+        cd $execbase
+        # $execpath &
+        daemon --check call_in --user root --pidfile $pidfile "nohup $execpath < /dev/null > _400_LOG &"
+        RETVAL=$?
+        echo
+        [ $RETVAL = 0  ] && touch ${lockfile}
+        return $RETVAL
+}
+
+stop() {
+        echo -n $"Stopping $prog: "
+        killproc $execpath
+        RETVAL=$?
+        echo
+        [ $RETVAL = 0 ] && rm -f ${lockfile} ${pidfile}
+}
+
+# Call
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  status)
+        status $execpath
+        RETVAL=$?
+        ;;
+  restart)
+        stop
+        start
+        ;;
+  *)
+        echo $"Usage: $prog {start|stop|restart|status}"
+        RETVAL=2
+esac
+
+exit $RETVAL

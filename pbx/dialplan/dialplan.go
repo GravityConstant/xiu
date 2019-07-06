@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vma/esl"
+	"xiu/esl"
 	"xiu/pbx/controller"
 	"xiu/pbx/entity"
 	"xiu/pbx/util"
@@ -17,6 +17,8 @@ import (
 
 func InitExtension() {
 	controller.WriteExtensionToRedis()
+
+	return
 
 	ext0 := entity.Extension{
 		Field:      "destination_number",
@@ -30,7 +32,6 @@ func InitExtension() {
 		},
 	}
 	entity.MapExt["00000000"] = &ext0
-	return
 
 	ext1 := entity.Extension{
 		Field:      "destination_number",
@@ -91,30 +92,23 @@ func InitExtension() {
 func PrepareExtension(dialplanNumber string) <-chan entity.Extension {
 	items := make(chan entity.Extension)
 	go func() {
-		var extension entity.Extension
-		if ext, ok := entity.MapExt[dialplanNumber]; ok {
-			extension = *ext
-		} else {
-			extension = *entity.MapExt["00000000"]
-		}
-		items <- extension
+		extension := controller.GetExtensionByDialplanNumber(dialplanNumber)
+		items <- *extension
 		close(items)
 	}()
 	return items
 }
 
-func ExecuteExtension(con *esl.Connection, UId string, items <-chan entity.Extension, hasIvr chan string) {
+func ExecuteExtension(con *esl.Connection, UId string, items <-chan entity.Extension) <-chan interface{} {
+	extraHandle := make(chan interface{})
 	go func() {
+		util.Info("execute", "extension")
 		for item := range items {
-		END:
 			for _, action := range item.Actions {
 				switch action.App {
-				case "ivr":
-					hasIvr <- action.Data
-					break END
-				case "bridge":
-					hasIvr <- action.Data
-					break END
+				case "ivr", "bridge":
+					extraHandle <- action
+					continue
 				}
 				if action.Sync == true {
 					con.ExecuteSync(action.App, UId, action.Data)
@@ -123,8 +117,9 @@ func ExecuteExtension(con *esl.Connection, UId string, items <-chan entity.Exten
 				}
 			}
 		}
-		hasIvr <- ""
+		close(extraHandle)
 	}()
+	return extraHandle
 }
 
 func InitIvrMenu() {
@@ -213,15 +208,17 @@ func InitIvrMenu() {
 func PrepareIvrMenu(dialplanNumber, callerNumber, ivrMenuExtension, dtmfDigits string) <-chan interface{} {
 	items := make(chan interface{})
 	go func() {
+		menu := controller.GetMenuByExtension(ivrMenuExtension)
 		if dtmfDigits == "" { // 首层ivr处理
-			items <- *entity.MapMenu[ivrMenuExtension]
+			items <- *menu
 		} else if dtmfDigits == "digitTimeout" {
 			// 按键输入不完整，重新播放本层
-			items <- *entity.MapMenu[ivrMenuExtension]
+			items <- *menu
 		} else {
-			colorlog.Info("dtmfDigits: %s", dtmfDigits)
+			util.Info("dialplan/dialplan.go", "dtmf digit", dtmfDigits)
+			// colorlog.Info("dtmfDigits: %s", dtmfDigits)
 			digitNotFound := true
-			for _, entry := range entity.MapMenu[ivrMenuExtension].Entrys {
+			for _, entry := range menu.Entrys {
 				if dtmfDigits == entry.Digits {
 					switch entry.Action {
 					case "menu-exec-app": // 执行app
@@ -233,9 +230,11 @@ func PrepareIvrMenu(dialplanNumber, callerNumber, ivrMenuExtension, dtmfDigits s
 						}
 						items <- action
 					case "menu-sub": // 跳到下层ivr
-						items <- *entity.MapMenu[entry.Param]
+						menu = controller.GetMenuByExtension(entry.Param)
+						items <- *menu
 					case "menu-top": // 跳到上层ivr
-						items <- *entity.MapMenu[entry.Param]
+						menu = controller.GetMenuByExtension(entry.Param)
+						items <- *menu
 					default:
 						items <- "action_not_found"
 					}
@@ -244,7 +243,7 @@ func PrepareIvrMenu(dialplanNumber, callerNumber, ivrMenuExtension, dtmfDigits s
 				}
 			}
 			if digitNotFound { // 按键输入错误，重新播放本层
-				items <- entity.MapMenu[ivrMenuExtension]
+				items <- *menu
 			}
 		}
 		close(items)
@@ -252,12 +251,15 @@ func PrepareIvrMenu(dialplanNumber, callerNumber, ivrMenuExtension, dtmfDigits s
 	return items
 }
 
+// 已弃用，原本用来修复按键超时的问题。
 func RepairMenuTimeout(con *esl.Connection, UId string, entrys <-chan interface{}) {
 	go func() {
+		util.Info("repair", "menu timeout")
 		for entry := range entrys {
 			switch item := entry.(type) {
 			case entity.Menu:
 				if len(item.File) == 0 {
+					con.Execute("hangup", UId, "NO_ROUTE_DESTINATION")
 					return
 				}
 				app := "play_and_get_digits"
@@ -276,9 +278,11 @@ func RepairMenuTimeout(con *esl.Connection, UId string, entrys <-chan interface{
 func ExecuteMenuEntry(con *esl.Connection, UId string, entrys <-chan interface{}) {
 	go func() {
 		for entry := range entrys {
+			util.Info("execute", "menu entry", entry)
 			switch item := entry.(type) {
 			case entity.Menu:
 				if len(item.File) == 0 {
+					con.Execute("hangup", UId, "NO_ROUTE_DESTINATION")
 					return
 				}
 				app := "play_and_get_digits"
@@ -286,17 +290,18 @@ func ExecuteMenuEntry(con *esl.Connection, UId string, entrys <-chan interface{}
 				data := `%d %d %d %d %s %s %s %s %s %d`
 				data = fmt.Sprintf(data, item.Min, item.Max, item.Tries, item.Timeout, item.Terminators, item.File, item.InvalidFile, item.VarName, item.Regexp, item.DigitTimeout)
 				con.Execute(app, UId, data)
-				entity.DtmfDigits[UId] = item.Name
+				entity.UIdDtmfSyncMap.Store(UId, item.Name)
 			case entity.MenuExecApp:
 				switch item.App {
 				case "bridge":
 					bridgeItem := PrepareBridge(item.Extra[0], item.Extra[1], item.Data)
 					ExecuteBridge(con, UId, bridgeItem)
+					// 使用playback,外呼的时候还是没有回铃音
+					// con.Execute("playback", UId, "/home/voices/rings/common/ivr_transfer.wav")
+					// 李工使用uuid_broadcast, 我使用了transfer_ringback
 				default:
 					con.Execute(item.App, UId, item.Data)
 				}
-
-				con.Execute("playback", UId, "/home/voices/rings/common/ivr_transfer.wav")
 			case string:
 				con.ExecuteSync("playback", UId, "/home/voices/rings/pbx/no_number.wav")
 				con.Execute("hangup", UId, "")
@@ -307,8 +312,10 @@ func ExecuteMenuEntry(con *esl.Connection, UId string, entrys <-chan interface{}
 	}()
 }
 
+// 已弃用，原来只有简单的回铃
 func ExecuteIvrMenu(con *esl.Connection, UId string, items <-chan entity.Menu) {
 	go func() {
+		util.Info("execute", "ivr menu")
 		for item := range items {
 			if len(item.File) == 0 {
 				return
@@ -318,7 +325,7 @@ func ExecuteIvrMenu(con *esl.Connection, UId string, items <-chan entity.Menu) {
 			data := `%d %d %d %d %s %s %s %s %s %d`
 			data = fmt.Sprintf(data, item.Min, item.Max, item.Tries, item.Timeout, item.Terminators, item.File, item.InvalidFile, item.VarName, item.Regexp, item.DigitTimeout)
 			con.Execute(app, UId, data)
-			entity.DtmfDigits[UId] = item.Name
+			entity.UIdDtmfSyncMap.Store(UId, item.Name)
 		}
 	}()
 }
@@ -326,9 +333,10 @@ func ExecuteIvrMenu(con *esl.Connection, UId string, items <-chan entity.Menu) {
 func PrepareSayJobnum(dialplanNumber, callee string) <-chan interface{} {
 	items := make(chan interface{})
 	go func() {
-		if entity.MapExt[dialplanNumber].IsSayJobnum == true {
-			jn := new(controller.Jobnum)
-			jn.GetCallString(dialplanNumber, callee)
+		extension := controller.GetExtensionByDialplanNumber(dialplanNumber)
+		if extension.IsSayJobnum {
+			jn := &controller.Jobnum{}
+			jn.GetJobnumRingPath(dialplanNumber, callee)
 			if len(jn.RingPaths) > 0 {
 				sayJobnum := entity.SayJobnum{
 					PrefixFile: "/home/voices/rings/common/job_number_prefix.wav",
@@ -342,6 +350,7 @@ func PrepareSayJobnum(dialplanNumber, callee string) <-chan interface{} {
 		} else {
 			items <- "no_need_say_jobnum"
 		}
+
 		close(items)
 	}()
 	return items
@@ -351,6 +360,7 @@ func PrepareSayJobnum(dialplanNumber, callee string) <-chan interface{} {
 // ivr的：uuid_broadcast李浩好像是这么用的
 func ExecuteSayJobnum(con *esl.Connection, UId string, items <-chan interface{}) {
 	go func() {
+		util.Info("execute", "say jobnum")
 		var err error
 		for item := range items {
 			switch t := item.(type) {
@@ -393,7 +403,7 @@ func PrepareSatisfySurvey(dialplanNumber, callee string) <-chan interface{} {
 	go func() {
 		// if entity.MapExt[dialplanNumber].IsSatisfySurvey == true {
 		// 不在dialplan中取值了，而在绑定号中
-		ss := new(controller.SatisfySurvey)
+		ss := &controller.SatisfySurvey{}
 		ss.IsOpenSatisfySurvey(dialplanNumber, callee)
 		if ss.IsOpen {
 			satisfySurvey := entity.SatisfySurvey{
@@ -410,6 +420,7 @@ func PrepareSatisfySurvey(dialplanNumber, callee string) <-chan interface{} {
 }
 func ExecuteSatisfySurvey(con *esl.Connection, UId string, items <-chan interface{}) {
 	go func() {
+		util.Info("execute", "satisfy survey.")
 		for item := range items {
 			switch t := item.(type) {
 			case entity.SatisfySurvey:
@@ -424,6 +435,7 @@ func ExecuteSatisfySurvey(con *esl.Connection, UId string, items <-chan interfac
 }
 func HandleSatisfySurvey(con *esl.Connection, UId string, satisfySurveyDigits string) {
 	go func() {
+		util.Info("handle", "satisfy survey.", "satisfySurveyDigits"+satisfySurveyDigits)
 		if satisfySurveyDigits == "unknown" {
 			con.ExecuteSync("speak", UId, `tts_commandline|Mandarin|未收到按键，但还是谢谢您的评价！`)
 			con.Execute("hangup", UId, "")
@@ -435,6 +447,8 @@ func HandleSatisfySurvey(con *esl.Connection, UId string, satisfySurveyDigits st
 				con.ExecuteSync("speak", UId, `tts_commandline|Mandarin|按键按错了，但还是谢谢您的评价！`)
 			}
 			con.Execute("hangup", UId, "")
+			ss := new(controller.SatisfySurvey)
+			ss.SaveSatisfySurveyResult(UId, satisfySurveyDigits)
 			colorlog.Success("%s %s insert db success", UId, satisfySurveyDigits)
 		}
 	}()
@@ -443,7 +457,8 @@ func HandleSatisfySurvey(con *esl.Connection, UId string, satisfySurveyDigits st
 func PrepareRecord(dialplanNumber, caller, callee string) <-chan interface{} {
 	items := make(chan interface{})
 	go func() {
-		if entity.MapExt[dialplanNumber].IsRecord == true {
+		extension := controller.GetExtensionByDialplanNumber(dialplanNumber)
+		if extension.IsRecord {
 			// 路径前缀
 			commonPath := `/home/voices/records`
 
@@ -478,6 +493,7 @@ func PrepareRecord(dialplanNumber, caller, callee string) <-chan interface{} {
 
 func ExecuteRecord(con *esl.Connection, UId string, items <-chan interface{}) {
 	go func() {
+		util.Info("execute", "record")
 		for item := range items {
 			switch t := item.(type) {
 			case entity.Record:
@@ -511,7 +527,8 @@ func PrepareBridge(dialplanNumber, callerNumber, bpIds string) <-chan interface{
 				Data: outcall.CallString,
 			}
 		}
-		colorlog.Info("outbound call: %s", outcall.CallString)
+		util.Info("dialplan/dialplan.go", "call string", outcall.CallString)
+		// colorlog.Info("outbound call: %s", outcall.CallString)
 		items <- bridge
 		close(items)
 	}()
@@ -519,6 +536,7 @@ func PrepareBridge(dialplanNumber, callerNumber, bpIds string) <-chan interface{
 }
 func ExecuteBridge(con *esl.Connection, UId string, items <-chan interface{}) {
 	go func() {
+		util.Info("execute", "bridge")
 		for item := range items {
 			switch t := item.(type) {
 			case entity.Action:

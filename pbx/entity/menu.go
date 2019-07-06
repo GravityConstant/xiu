@@ -1,5 +1,9 @@
 package entity
 
+import (
+	"sync"
+)
+
 type Menu struct {
 	Name         string //
 	Min          int    // Minimum number of digits to fetch (minimum value of 0)
@@ -28,4 +32,4 @@ type MenuExecApp struct {
 }
 
 var MapMenu = make(map[string]*Menu)
-var DtmfDigits = make(map[string]string)
+var UIdDtmfSyncMap sync.Map

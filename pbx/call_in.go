@@ -1,5 +1,7 @@
 /*
-freeswitch命令：https://freeswitch.org/confluence/display/FREESWITCH/mod_commands
+freeswitch命令：
+https://freeswitch.org/confluence/display/FREESWITCH/mod_commands
+http://wiki.freeswitch.org.cn/wiki/Mod_Commands.html
 */
 
 package main
@@ -11,13 +13,12 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"regexp"
 	"runtime/pprof"
-	"strconv"
-	"strings"
+	"syscall"
 	"time"
 
-	"github.com/vma/esl"
+	"xiu/esl"
+	// "xiu/pbx/controller"
 	"xiu/pbx/dialplan"
 	"xiu/pbx/entity"
 	"xiu/pbx/models"
@@ -38,12 +39,16 @@ func init() {
 	util.InitPbxConfig()
 	// 初始化日志
 	util.InitLog()
+	// 初始化缓存
+	util.InitCache()
 	// 初始化数据库
 	models.ImplInstance.InitDB()
 	// 初始化map[destination_number]extension，全局变量
 	dialplan.InitExtension()
 	// 初始化map[destination_number]menu，全局变量
 	dialplan.InitIvrMenu()
+	// 测试是否写入到redis
+	// controller.PrintCache()
 }
 
 func main() {
@@ -73,7 +78,7 @@ func main() {
 			log.Fatal("ERR connecting to freeswitch:", err)
 		}
 		if err := con.HandleEvents(); err != nil {
-			util.Fatal("call_in.go", "53", err)
+			util.Error("call_in.go", "handle events error", err)
 		}
 	}()
 
@@ -81,7 +86,8 @@ func main() {
 	c := make(chan os.Signal, 1)
 	// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
 	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught.
-	signal.Notify(c, os.Interrupt)
+	// signal.Notify(c, os.Interrupt)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	// Block until we receive our signal.
 	<-c
 	// Create a deadline to wait for.
@@ -105,7 +111,7 @@ func (h *Handler) OnDisconnect(con *esl.Connection, ev *esl.Event) {
 	log.Println("esl disconnected:", ev)
 }
 
-func (h *Handler) OnClose(con *esl.Connection) {
+func (h *Handler) OnClose(con *esl.Connection, ev *esl.Event) {
 	log.Println("esl connection closed")
 }
 
@@ -122,32 +128,21 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 		if _, ok := h.Caller[ev.UId]; !ok && direction == "inbound" {
 			log.Printf("channel create:%s // %s\n", destinationNumber, ev.UId)
 			items := dialplan.PrepareExtension(destinationNumber)
-			// 存在ivr的情况时使用
-			hasIvr := make(chan string)
-			dialplan.ExecuteExtension(con, ev.UId, items, hasIvr)
-			// 不再阻塞，继续执行ivr的情况
-			ivrMenuExtension := <-hasIvr
-			re := regexp.MustCompile(`\d{7,8}1000`)
-			isIvr := re.Match([]byte(ivrMenuExtension))
-			if isIvr {
-				ivrMenu := dialplan.PrepareIvrMenu(destinationNumber, callerNumber, ivrMenuExtension, "")
-				dialplan.ExecuteMenuEntry(con, ev.UId, ivrMenu)
-			} else {
-				isOutline := true
-				bpIds := strings.Split(ivrMenuExtension, ",")
-				for _, id := range bpIds {
-					if _, err := strconv.Atoi(id); err != nil {
-						isOutline = false
-						break
+			// bridge, ivr特殊处理
+			extra := dialplan.ExecuteExtension(con, ev.UId, items)
+			// 特殊处理准备
+			for ext := range extra {
+				switch t := ext.(type) {
+				case entity.Action:
+					switch t.App {
+					case "bridge":
+						items := dialplan.PrepareBridge(destinationNumber, callerNumber, t.Data)
+						dialplan.ExecuteBridge(con, ev.UId, items)
+					case "ivr":
+						items := dialplan.PrepareIvrMenu(destinationNumber, callerNumber, t.Data, "")
+						dialplan.ExecuteMenuEntry(con, ev.UId, items)
 					}
 				}
-				util.Info("call_in.go", "is out line?", isOutline)
-				if isOutline {
-					// 绑定号要进行实时的时间，区域筛选
-					items := dialplan.PrepareBridge(destinationNumber, callerNumber, ivrMenuExtension)
-					dialplan.ExecuteBridge(con, ev.UId, items)
-				}
-
 			}
 
 			h.Caller[ev.UId] = 1
@@ -161,26 +156,35 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 		if ev.App == "play_and_get_digits" {
 			// fmt.Println(ev)
 			resultDTMF := ev.Get("variable_read_result")
+			var ivrMenuExtension string
+			if curMenu, ok := entity.UIdDtmfSyncMap.Load(ev.UId); ok {
+				ivrMenuExtension = curMenu.(string)
+			} else {
+				util.Error("call_in.go", "ivr menu extension not found", ev.UId)
+				con.Execute("hangup", ev.UId, "")
+				return
+			}
 			if resultDTMF == "success" {
 				dtmfDigits := ev.Get("variable_foo_dtmf_digits")
 				destinationNumber := ev.Get("Caller-Destination-Number")
 				// dialplan.MapMenu[entity.DtmfDigits[ev.UId]]
 				// direction := ev.Get("Call-Direction")
-				items := dialplan.PrepareIvrMenu(destinationNumber, callerNumber, entity.DtmfDigits[ev.UId], dtmfDigits)
+				items := dialplan.PrepareIvrMenu(destinationNumber, callerNumber, ivrMenuExtension, dtmfDigits)
 				dialplan.ExecuteMenuEntry(con, ev.UId, items)
 			} else if resultDTMF == "timeout" {
 				dtmfDigits := ev.Get("variable_foo_dtmf_digits")
 				destinationNumber := ev.Get("Caller-Destination-Number")
 				switch dtmfDigits {
 				case "*": // 最大长度大于1，*后不按#会超时，处理返回上级ivr
-					items := dialplan.PrepareIvrMenu(destinationNumber, callerNumber, entity.DtmfDigits[ev.UId], dtmfDigits)
+					items := dialplan.PrepareIvrMenu(destinationNumber, callerNumber, ivrMenuExtension, dtmfDigits)
 					dialplan.ExecuteMenuEntry(con, ev.UId, items)
 				default:
 					// 默认如果没有严格的正则表达式，不会播放输入错误的提示，输入按键不够的话，只能再次播放本层ivr
-					items := dialplan.PrepareIvrMenu(destinationNumber, callerNumber, entity.DtmfDigits[ev.UId], "digitTimeout")
+					items := dialplan.PrepareIvrMenu(destinationNumber, callerNumber, ivrMenuExtension, "digitTimeout")
 					dialplan.ExecuteMenuEntry(con, ev.UId, items)
 				}
-			} else if resultDTMF == "failure" {
+			} else if resultDTMF == "failure" || resultDTMF == "" {
+				// 彩铃不存在时，resultDTMF为空
 				con.Execute("hangup", ev.UId, "")
 			}
 		} else if ev.App == "bridge" {
@@ -247,6 +251,7 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 	case esl.CHANNEL_DESTROY:
 		// fmt.Println(ev)
 	case esl.CHANNEL_HANGUP:
+		entity.UIdDtmfSyncMap.Delete(ev.UId)
 	}
 }
 

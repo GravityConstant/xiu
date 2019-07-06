@@ -21,6 +21,7 @@ func (self *Impl) InitDB() {
 	password := util.PbxConfigInstance.Get("postgres::password")
 	dbname := util.PbxConfigInstance.Get("postgres::dbname")
 	sslmode := util.PbxConfigInstance.Get("postgres::sslmode")
+	runmode := util.PbxConfigInstance.Get("runmode")
 
 	dsn := `host=%s port=%s user=%s password=%s dbname=%s sslmode=%s`
 	dsn = fmt.Sprintf(dsn, host, port, user, password, dbname, sslmode)
@@ -30,7 +31,15 @@ func (self *Impl) InitDB() {
 	if err != nil {
 		util.Fatal("models/init.go", "29", "Got error when connect database, the error is", err)
 	}
-	self.DB.LogMode(true)
+	if runmode == "debug" {
+		self.DB.LogMode(true)
+	} else {
+		self.DB.LogMode(false)
+	}
+
+	// self.DB.DB()获取到默认的*sql.DB
+	self.DB.DB().SetMaxIdleConns(10)
+
 }
 
 //下面是统一的表名管理
@@ -77,4 +86,8 @@ func BindPhonerTBName() string {
 
 func BindPhoneTimesetTBName() string {
 	return TableName("foo_bindphone_timeset")
+}
+
+func SatisfySurveyDetailTBName() string {
+	return TableName("foo_satisfy_survey_detail")
 }
