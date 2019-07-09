@@ -1,11 +1,17 @@
 package entity
 
 import (
+	"errors"
 	"sync"
 )
 
+var (
+	ErrIvrFileNotExist = errors.New("ivr file not exist")
+	ErrNoEntry         = errors.New("ivr not entry")
+)
+
 type Menu struct {
-	Name         string //
+	Name         string // 无关
 	Min          int    // Minimum number of digits to fetch (minimum value of 0)
 	Max          int    // Maximum number of digits to fetch (maximum value of 128)
 	Tries        int    // number of tries for the sound to play
@@ -17,6 +23,7 @@ type Menu struct {
 	Regexp       string // Regular expression to match digits (optional, an empty string allows all input (default)).
 	DigitTimeout int    // Inter-digit timeout; number of milliseconds allowed between digits in lieu of dialing a terminator digit; once this number is reached, PAGD assumes that the caller has no more digits to dial (optional, defaults to the value of <timeout>).
 	Entrys       []Entry
+	Err          error // 无关
 }
 
 type Entry struct {

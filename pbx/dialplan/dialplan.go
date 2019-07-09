@@ -208,7 +208,26 @@ func InitIvrMenu() {
 func PrepareIvrMenu(dialplanNumber, callerNumber, ivrMenuExtension, dtmfDigits string) <-chan interface{} {
 	items := make(chan interface{})
 	go func() {
+		// 返回时，关闭通道
+		defer close(items)
+		// 获取menu
 		menu := controller.GetMenuByExtension(ivrMenuExtension)
+		// 错误处理
+		switch menu.Err {
+		case entity.ErrIvrFileNotExist:
+			items <- entity.MenuExecApp{
+				App:  "playback",
+				Data: "/home/voices/rings/common/ivr-invalid_sound_prompt.wav",
+			}
+			return
+		case entity.ErrNoEntry:
+			items <- entity.MenuExecApp{
+				App:  "playback",
+				Data: menu.File,
+			}
+			return
+		}
+		// 正常流程
 		if dtmfDigits == "" { // 首层ivr处理
 			items <- *menu
 		} else if dtmfDigits == "digitTimeout" {
@@ -246,7 +265,6 @@ func PrepareIvrMenu(dialplanNumber, callerNumber, ivrMenuExtension, dtmfDigits s
 				items <- *menu
 			}
 		}
-		close(items)
 	}()
 	return items
 }
@@ -299,6 +317,9 @@ func ExecuteMenuEntry(con *esl.Connection, UId string, entrys <-chan interface{}
 					// 使用playback,外呼的时候还是没有回铃音
 					// con.Execute("playback", UId, "/home/voices/rings/common/ivr_transfer.wav")
 					// 李工使用uuid_broadcast, 我使用了transfer_ringback
+				case "playback":
+					con.ExecuteSync(item.App, UId, item.Data)
+					con.Execute("hangup", UId, "")
 				default:
 					con.Execute(item.App, UId, item.Data)
 				}

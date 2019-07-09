@@ -104,6 +104,7 @@ func main() {
 }
 
 func (h *Handler) OnConnect(con *esl.Connection) {
+	// 取消事件：nixevent
 	con.SendRecv("event", "plain", "ALL")
 }
 
@@ -111,13 +112,21 @@ func (h *Handler) OnDisconnect(con *esl.Connection, ev *esl.Event) {
 	log.Println("esl disconnected:", ev)
 }
 
-func (h *Handler) OnClose(con *esl.Connection, ev *esl.Event) {
+func (h *Handler) OnClose(con *esl.Connection) {
 	log.Println("esl connection closed")
 }
 
 func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 	log.Printf("%s - event %s %s %s\n", ev.UId, ev.Name, ev.App, ev.AppData)
 	// fmt.Println(ev) // send to stderr as it is very verbose
+	// 直接挂机了，不做任何处理
+	// 看了CHANNEL_HANGUP没有这个变量，所以使用了。
+	// 如果有的话，就不能清除entity.UIdDtmfSyncMap这个map的某些值
+	if sipHangupDisposition := ev.Get("variable_sip_hangup_disposition"); len(sipHangupDisposition) > 0 {
+		// util.Info("call_in.go", "sip hangup disposition", ev.Name, ev.App, ev.AppData)
+		return
+	}
+	// 事件处理
 	switch ev.Name {
 	case esl.CHANNEL_CREATE:
 		destinationNumber := ev.Get("Caller-Destination-Number")
@@ -161,7 +170,8 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 				ivrMenuExtension = curMenu.(string)
 			} else {
 				util.Error("call_in.go", "ivr menu extension not found", ev.UId)
-				con.Execute("hangup", ev.UId, "")
+				// 这里不能在挂机了，会进入这里，一般是主叫主动挂机了！！！
+				// con.Execute("hangup", ev.UId, "")
 				return
 			}
 			if resultDTMF == "success" {

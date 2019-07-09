@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"os"
 	"sort"
 
 	"xiu/pbx/entity"
@@ -382,6 +383,10 @@ func GetExtensionByDialplanNumberResult(dialplanDetail []*models.Extension) *ent
 // 得到ivr_menu_extension对应的Menu
 func GetMenuByExtension(extension string) *entity.Menu {
 	menu := &entity.Menu{}
+	defer func() {
+		menu.Err = CheckMenuValid(menu)
+		util.Info("controller/extension.go", "menu", menu)
+	}()
 	// first: get from redis
 	if err := util.GetCache(extension, menu); err == nil {
 		return menu
@@ -399,6 +404,20 @@ func GetMenuByExtension(extension string) *entity.Menu {
 	menuDetail := models.GetAllIvrMenuDetail(&params)
 	menu = GetMenuByExtensionResult(menuDetail, extension)
 	return menu
+}
+
+func CheckMenuValid(menu *entity.Menu) error {
+	if fileInfo, err := os.Stat(menu.File); os.IsNotExist(err) {
+		return entity.ErrIvrFileNotExist
+	} else {
+		if fileInfo.IsDir() {
+			return entity.ErrIvrFileNotExist
+		}
+	}
+	if len(menu.Entrys) == 0 {
+		return entity.ErrNoEntry
+	}
+	return nil
 }
 
 func GetMenuByExtensionResult(menuDetail []*models.Menu, extension string) *entity.Menu {
