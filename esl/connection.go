@@ -7,6 +7,7 @@ package esl
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -200,32 +201,38 @@ func (con *Connection) Authenticate() error {
 	return nil
 }
 
-func (con *Connection) HandleEvents() error {
+func (con *Connection) HandleEvents(ctx context.Context) error {
 	for con.Connected {
-		ev, err := NewEventFromReader(con.buffer.Reader)
-		if err != nil {
-			if err == io.EOF || !con.Connected {
-				return nil
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			ev, err := NewEventFromReader(con.buffer.Reader)
+			if err != nil {
+				if err == io.EOF || !con.Connected {
+					return nil
+				}
+				// 原来发生错误，直接断开connect
+				con.Close()
+				return fmt.Errorf("event read loop: %v\n", err)
+				// ev返回一个Err
+				// con.err <- err
+				// break
 			}
-			// 原来发生错误，直接断开connect
-			con.Close()
-			return fmt.Errorf("event read loop: %v\n", err)
-			// ev返回一个Err
-			// con.err <- err
-			// break
+			switch ev.Type {
+			case EventError:
+				return fmt.Errorf("invalid event: [%s]", ev)
+			case EventDisconnect:
+				con.Handler.OnDisconnect(con, ev)
+			case EventCommandReply:
+				con.cmdReply <- ev
+			case EventApiResponse:
+				con.apiResp <- ev
+			case EventGeneric:
+				go con.Handler.OnEvent(con, ev)
+			}
 		}
-		switch ev.Type {
-		case EventError:
-			return fmt.Errorf("invalid event: [%s]", ev)
-		case EventDisconnect:
-			con.Handler.OnDisconnect(con, ev)
-		case EventCommandReply:
-			con.cmdReply <- ev
-		case EventApiResponse:
-			con.apiResp <- ev
-		case EventGeneric:
-			go con.Handler.OnEvent(con, ev)
-		}
+
 	}
 	return fmt.Errorf("disconnected")
 }

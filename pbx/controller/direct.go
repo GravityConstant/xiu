@@ -15,7 +15,8 @@ type Outcall struct {
 
 const (
 	// {ignore_early_media=true,originate_continue_on_timeout=true}[leg_timeout=15]sofia/gateway/  zqzj/13675017141|[leg_timeout=25]sofia/gateway/zqzj/83127866"
-	globalParam  = `{ignore_early_media=ring_ready,originate_continue_on_timeout=true,sip_h_Diversion=<sip:%s@ip>}`
+	// ignore_early_media=ring_ready,
+	globalParam  = `{%soriginate_continue_on_timeout=true,sip_h_Diversion=<sip:%s@ip>}`
 	privateParam = `[leg_timeout=%d]sofia/gateway/%s/%s`
 )
 
@@ -77,7 +78,7 @@ func (self *Outcall) GetCallString(diversion, caller, bpIds string) {
 
 	// 拼接呼叫字符串
 	pPs := make([]string, 0)
-	var pP string
+	var pP, gP string
 
 	if len(resultBindPhones) > 0 {
 		for _, bp := range resultBindPhones {
@@ -86,7 +87,13 @@ func (self *Outcall) GetCallString(diversion, caller, bpIds string) {
 		}
 
 		pP = strings.Join(pPs, "|")
-		gP := fmt.Sprintf(globalParam, diversion)
+		if util.PbxConfigInstance.Get("freeswitch::ignore_early_media") == "false" {
+			// 网关都是设置caller-id-in-from=true,只要设置origination_caller_id_number就可以了
+			gP = fmt.Sprintf(globalParam, "origination_caller_id_number=95795279,", diversion)
+		} else {
+			gP = fmt.Sprintf(globalParam, "ignore_early_media=ring_ready,", diversion)
+		}
+
 		self.CallString = gP + pP
 	}
 

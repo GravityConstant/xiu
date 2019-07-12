@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime/pprof"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -25,11 +26,10 @@ import (
 	"xiu/pbx/util"
 )
 
-var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
+var done atomic.Value
 
 type Handler struct {
 	Caller map[string]int
-	Callee map[string]string
 }
 
 func init() {
@@ -52,33 +52,43 @@ func init() {
 }
 
 func main() {
+	// set params
+	var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 	var wait time.Duration
-	flag.DurationVar(&wait, "graceful-timeout", time.Second*15, "the duration for which the server gracefully wait for existing connections to finish - e.g. 15s or 1m")
-	// CPU性能监测
+	flag.DurationVar(&wait, "graceful-timeout", time.Second*5, "the duration for which the server gracefully wait for existing connections to finish - e.g. 15s or 1m")
+	// parse params
 	flag.Parse()
+	// CPU性能监测
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
 		if err != nil {
 			log.Fatal(err)
 		}
 		pprof.StartCPUProfile(f)
+		// stop profile
+		pprof.StopCPUProfile()
 
 	}
-
+	// begin
+	handler := new(Handler)
+	handler.Caller = make(map[string]int)
+	// Create a deadline to wait for.
+	ctx, cancel := context.WithCancel(context.Background())
 	// business code
 	go func() {
+	RESTART:
 		fmt.Println("////////////////////////////////////////////////////")
 		fmt.Println("//                event                           //")
 		fmt.Println("////////////////////////////////////////////////////")
-		handler := &Handler{}
-		handler.Caller = make(map[string]int)
 
 		con, err := esl.NewConnection("127.0.0.1:8021", handler)
 		if err != nil {
 			log.Fatal("ERR connecting to freeswitch:", err)
 		}
-		if err := con.HandleEvents(); err != nil {
+		if err := con.HandleEvents(ctx); err != nil {
 			util.Error("call_in.go", "handle events error", err)
+			time.Sleep(time.Second)
+			goto RESTART
 		}
 	}()
 
@@ -90,22 +100,36 @@ func main() {
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	// Block until we receive our signal.
 	<-c
-	// Create a deadline to wait for.
-	_, cancel := context.WithTimeout(context.Background(), wait)
-	defer cancel()
-	// stop profile
-	fmt.Println("////////////////////////////////////////////////////")
-	fmt.Println("//                end                             //")
-	fmt.Println("////////////////////////////////////////////////////")
-	pprof.StopCPUProfile()
+	// on event no longer handle new UId
+	done.Store(true)
+	// statistics current calls
+	log.Printf("quiting and remainning calls: %d", len(handler.Caller))
+	// wait time and cancel
+	// <-time.After(wait)
+	// use time.Tick to wait handle remaing calls
+	tickCount := 0
+	tick := time.Tick(wait)
+	for range tick {
+		if len(handler.Caller) == 0 {
+			break
+		} else if tickCount == 36 {
+			break
+		}
+		log.Printf("tickCount: %d, remainning calls: %d", tickCount, len(handler.Caller))
+		tickCount++
+	}
+	// stop business work
+	cancel()
 
+	// exit
 	log.Println("shutting down")
 	os.Exit(0)
 }
 
 func (h *Handler) OnConnect(con *esl.Connection) {
 	// 取消事件：nixevent
-	con.SendRecv("event", "plain", "ALL")
+	// con.SendRecv("event", "plain", "ALL")
+	con.SendRecv("event", "plain", "CHANNEL_CREATE CHANNEL_EXECUTE_COMPLETE CHANNEL_ANSWER CHANNEL_HANGUP")
 }
 
 func (h *Handler) OnDisconnect(con *esl.Connection, ev *esl.Event) {
@@ -117,12 +141,20 @@ func (h *Handler) OnClose(con *esl.Connection) {
 }
 
 func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
-	log.Printf("%s - event %s %s %s\n", ev.UId, ev.Name, ev.App, ev.AppData)
+	if t, ok := done.Load().(bool); ok && t == true {
+		if _, ok := h.Caller[ev.UId]; !ok {
+			// log.Printf("%s - reject event %s %s %s\n", ev.UId, ev.Name, ev.App, ev.AppData)
+			return
+		}
+	}
+	// log.Printf("%s - event %s %s %s\n", ev.UId, ev.Name, ev.App, ev.AppData)
 	// fmt.Println(ev) // send to stderr as it is very verbose
 	// 直接挂机了，不做任何处理
 	// 看了CHANNEL_HANGUP没有这个变量，所以使用了。
 	// 如果有的话，就不能清除entity.UIdDtmfSyncMap这个map的某些值
 	if sipHangupDisposition := ev.Get("variable_sip_hangup_disposition"); len(sipHangupDisposition) > 0 {
+		delete(h.Caller, ev.UId)
+		entity.UIdDtmfSyncMap.Delete(ev.UId)
 		// util.Info("call_in.go", "sip hangup disposition", ev.Name, ev.App, ev.AppData)
 		return
 	}
@@ -157,6 +189,7 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 			h.Caller[ev.UId] = 1
 		}
 	case esl.CHANNEL_EXECUTE_COMPLETE:
+		log.Printf("%s - event %s %s %s\n", ev.UId, ev.Name, ev.App, ev.AppData)
 		// 主叫号码
 		callerNumber := ev.Get("Caller-Caller-ID-Number")
 		// 被叫号码
@@ -261,6 +294,7 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 	case esl.CHANNEL_DESTROY:
 		// fmt.Println(ev)
 	case esl.CHANNEL_HANGUP:
+		delete(h.Caller, ev.UId)
 		entity.UIdDtmfSyncMap.Delete(ev.UId)
 	}
 }
