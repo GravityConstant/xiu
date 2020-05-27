@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 
 	"xiu/pbx/entity"
 	"xiu/pbx/models"
 	"xiu/pbx/util"
+	colorlog "xiu/util"
 )
 
 // 将Extension写入redis，如果失败，这放在全局变量entity.MapExt
@@ -93,10 +95,15 @@ func WriteExtensionToRedis() {
 	if util.CheckRedis() {
 		for _, key := range keys {
 			sort.Sort(entity.ByOrder(me[key].Actions))
-			util.SetCache(key, me[key], 0)
+			if err := util.SetCache(key, me[key], 0); err == nil {
+				colorlog.Success("save to redis success:", key)
+			} else {
+				colorlog.Success("save to redis fail:", key)
+			}
 		}
 	} else {
 		for _, key := range keys {
+			colorlog.Success("save to redis fail:", key)
 			sort.Sort(entity.ByOrder(me[key].Actions))
 		}
 		entity.MapExt = me
@@ -283,17 +290,17 @@ func PrintCache() {
 func GetExtensionByDialplanNumber(dialplanNumber string) *entity.Extension {
 	ext := &entity.Extension{}
 	// first: get from redis
-	if err := util.GetCache(dialplanNumber, ext); err == nil {
-		return ext
-	} else {
-		util.Error("controller/extension.go", "get extension from redis error", err)
-	}
-	// second: get from entity.MapExt
-	if ext, ok := entity.MapExt[dialplanNumber]; ok {
-		return ext
-	} else {
-		util.Error("controller/extension.go", "get extension from map error")
-	}
+	// if err := util.GetCache(dialplanNumber, ext); err == nil {
+	// 	return ext
+	// } else {
+	// 	util.Error("controller/extension.go", "get extension from redis error", err)
+	// }
+	// // second: get from entity.MapExt
+	// if ext, ok := entity.MapExt[dialplanNumber]; ok {
+	// 	return ext
+	// } else {
+	// 	util.Error("controller/extension.go", "get extension from map error")
+	// }
 	// third: get from database
 	params := models.ExtensionQueryParam{DialplanNumber: dialplanNumber}
 	dialplanDetail := models.GetAllDialplanDetail(&params)
@@ -331,52 +338,58 @@ func GetExtensionByDialplanNumberResult(dialplanDetail []*models.Extension) *ent
 		App:   "export",
 		Data:  "dialplan_id=%d",
 	}
+	exportDialplanId.Data = fmt.Sprintf(exportDialplanId.Data, dialplanDetail[0].DialplanId)
+	extension.Actions = append(extension.Actions, exportDialplanId)
 	// 默认ivr呼叫铃音
 	transferRingback := entity.Action{
 		Order: 0,
 		App:   "set",
 		Data:  "transfer_ringback=/home/voices/rings/common/ivr_transfer.wav",
 	}
-	action := entity.Action{}
+	extension.Actions = append(extension.Actions, transferRingback)
 
+	action := entity.Action{}
 	for _, item := range dialplanDetail {
+		if !item.DialplanEnabled {
+			return &ext0
+		}
 		action.Order = item.DialplanDetailOrder
 		// ivr另外处理
 		if item.DialplanDetailApp == "submenu" {
 			action.App = "ivr"
 		} else {
-			action.App = item.DialplanDetailApp
+			action.App = strings.TrimSpace(item.DialplanDetailApp)
 		}
-		action.Data = item.DialplanDetailData
+		action.Data = strings.TrimSpace(item.DialplanDetailData)
 
 		if len(extension.Expression) > 0 {
-			if extension.Expression == item.DialplanNumber {
+			if strings.Compare(extension.Expression, strings.TrimSpace(item.DialplanNumber)) == 0 {
 				extension.Actions = append(extension.Actions, action)
 			} else {
 				util.Error("controller/extension.go", "get one extension, but multi get", item.DialplanNumber)
 			}
 
 		} else {
-			extension.Name = item.DialplanName
-			extension.Field = item.DialplanContext
-			extension.Expression = item.DialplanNumber
+			extension.Name = strings.TrimSpace(item.DialplanName)
+			extension.Field = strings.TrimSpace(item.DialplanContext)
+			extension.Expression = strings.TrimSpace(item.DialplanNumber)
 			extension.Actions = append(extension.Actions, action)
-			// export dialplan id
-			exportDialplanId.Data = fmt.Sprintf(exportDialplanId.Data, item.DialplanId)
-			extension.Actions = append(extension.Actions, exportDialplanId)
-			// ivr外呼回铃音
-			extension.Actions = append(extension.Actions, transferRingback)
 		}
 		action = entity.Action{}
 	}
 	// 保存到redis
 	if util.CheckRedis() {
 		sort.Sort(entity.ByOrder(extension.Actions))
-		util.SetCache(extension.Expression, extension, 0)
+		if err := util.SetCache(extension.Expression, extension, 0); err != nil {
+			util.Info("controller/extension.go", "set redis cache fail", extension.Expression, err)
+		} else {
+			util.Info("controller/extension.go", "set redis cache success", extension.Expression)
+		}
 	} else {
 		sort.Sort(entity.ByOrder(extension.Actions))
 		entity.MapExt[extension.Expression] = &extension
 	}
+	colorlog.Success("current dialplan: %v\n", extension)
 	return &extension
 }
 

@@ -36,7 +36,9 @@ func GetAllDialplanDetail(params *ExtensionQueryParam) []*Extension {
 	for _, val := range mw {
 		where += val + " and"
 	}
-	where = strings.TrimSuffix(where, "and")
+	if len(where) > 0 {
+		where = "and " + strings.TrimSuffix(where, "and")
+	}
 	// sql combine
 	sql = fmt.Sprintf(sql, CallOperationTBName(), DialplanTBName(), DialplanDetailTBName(), where)
 

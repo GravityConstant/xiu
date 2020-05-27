@@ -17,7 +17,10 @@ import (
 
 // http://mobsec-dianhua.baidu.com/dianhua_api/open/location?tel=1568401,1463484
 const (
-    request_url = `http://mobsec-dianhua.baidu.com/dianhua_api/open/location`
+    // request_url = `http://mobsec-dianhua.baidu.com/dianhua_api/open/location`
+    
+    // {"ret":"ok","mobile":"18050132566","data":["福建","福州","电信","0591",""]}
+    request_url = `http://api.ip138.com/mobile/?mobile=18050132566&token=e7ad6e24e2b70d0e600be28d5e815874`
 )
 
 var (

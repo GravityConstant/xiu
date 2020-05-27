@@ -14,9 +14,9 @@ type Outcall struct {
 }
 
 const (
-	// {ignore_early_media=true,originate_continue_on_timeout=true}[leg_timeout=15]sofia/gateway/  zqzj/13675017141|[leg_timeout=25]sofia/gateway/zqzj/83127866"
+	// {ignore_early_media=true,originate_continue_on_timeout=true}[leg_timeout=15]sofia/gateway/zqzj/13675017141|[leg_timeout=25]sofia/gateway/zqzj/83127866"
 	// ignore_early_media=ring_ready,
-	globalParam  = `{%soriginate_continue_on_timeout=true,sip_h_Diversion=<sip:%s@ip>}`
+	globalParam  = `{%soriginate_continue_on_timeout=true,sip_h_Diversion=<sip:%s@%s>}`
 	privateParam = `[leg_timeout=%d]sofia/gateway/%s/%s`
 )
 
@@ -81,17 +81,19 @@ func (self *Outcall) GetCallString(diversion, caller, bpIds string) {
 	var pP, gP string
 
 	if len(resultBindPhones) > 0 {
+		gw, ip := GetGatewayByAreaCode(resultBindPhones[0].AreaCode)
 		for _, bp := range resultBindPhones {
-			pP = fmt.Sprintf(privateParam, bp.WaitTime, GetGatewayByAreaCode(bp.AreaCode), bp.BindPhone)
+
+			pP = fmt.Sprintf(privateParam, bp.WaitTime, gw, bp.BindPhone)
 			pPs = append(pPs, pP)
 		}
 
 		pP = strings.Join(pPs, "|")
 		if util.PbxConfigInstance.Get("freeswitch::ignore_early_media") == "false" {
 			// 网关都是设置caller-id-in-from=true,只要设置origination_caller_id_number就可以了
-			gP = fmt.Sprintf(globalParam, "origination_caller_id_number=95795279,", diversion)
+			gP = fmt.Sprintf(globalParam, "origination_caller_id_number=95795279,", diversion, ip)
 		} else {
-			gP = fmt.Sprintf(globalParam, "ignore_early_media=ring_ready,", diversion)
+			gP = fmt.Sprintf(globalParam, "ignore_early_media=ring_ready,", diversion, ip)
 		}
 
 		self.CallString = gP + pP
@@ -228,28 +230,38 @@ func PhoneAreaCode(number string) (name, value string) {
 	return
 }
 
-func GetGatewayByAreaCode(code string) (gw string) {
+func GetGatewayByAreaCode(code string) (gw, ip string) {
 	switch code {
-	case "0591":
+	case "0591": // 现无此网关
 		gw = "zqzj"
+		ip = "192.168.1.213"
 	case "0592":
 		gw = "xiamen"
+		ip = "192.168.1.214"
 	case "0593":
 		gw = "ningde"
+		ip = "192.168.1.218"
 	case "0594":
 		gw = "putian"
+		ip = "192.168.1.216"
 	case "0595":
 		gw = "quanzhou"
-	case "0596":
+		ip = "192.168.1.215"
+	case "0596": // 现无此网关
 		gw = "zhangzhou"
+		ip = "192.168.1.220"
 	case "0597":
 		gw = "longyan"
+		ip = "192.168.1.219"
 	case "0598":
 		gw = "sanming"
+		ip = "192.168.1.217"
 	case "0599":
 		gw = "nanping"
-	default:
+		ip = "192.168.1.201"
+	default: // 现无此网关
 		gw = "zqzj"
+		ip = "192.168.1.213"
 	}
 	return
 }

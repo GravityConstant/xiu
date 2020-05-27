@@ -24,6 +24,7 @@ import (
 	"xiu/pbx/entity"
 	"xiu/pbx/models"
 	"xiu/pbx/util"
+	colorlog "xiu/util"
 )
 
 var done atomic.Value
@@ -44,9 +45,9 @@ func init() {
 	// 初始化数据库
 	models.ImplInstance.InitDB()
 	// 初始化map[destination_number]extension，全局变量
-	dialplan.InitExtension()
+	// dialplan.InitExtension()
 	// 初始化map[destination_number]menu，全局变量
-	dialplan.InitIvrMenu()
+	// dialplan.InitIvrMenu()
 	// 测试是否写入到redis
 	// controller.PrintCache()
 }
@@ -141,6 +142,7 @@ func (h *Handler) OnClose(con *esl.Connection) {
 }
 
 func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
+	// 终止程序执行，不再处理新的呼入了。
 	if t, ok := done.Load().(bool); ok && t == true {
 		if _, ok := h.Caller[ev.UId]; !ok {
 			// log.Printf("%s - reject event %s %s %s\n", ev.UId, ev.Name, ev.App, ev.AppData)
@@ -169,6 +171,7 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 		if _, ok := h.Caller[ev.UId]; !ok && direction == "inbound" {
 			log.Printf("channel create:%s // %s\n", destinationNumber, ev.UId)
 			items := dialplan.PrepareExtension(destinationNumber)
+
 			// bridge, ivr特殊处理
 			extra := dialplan.ExecuteExtension(con, ev.UId, items)
 			// 特殊处理准备
@@ -179,21 +182,33 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 					case "bridge":
 						items := dialplan.PrepareBridge(destinationNumber, callerNumber, t.Data)
 						dialplan.ExecuteBridge(con, ev.UId, items)
+						// viewDialplan(items)
+						h.Caller[ev.UId] = 1
 					case "ivr":
 						items := dialplan.PrepareIvrMenu(destinationNumber, callerNumber, t.Data, "")
 						dialplan.ExecuteMenuEntry(con, ev.UId, items)
+						// viewDialplan(items)
+						h.Caller[ev.UId] = 1
+					case "hangup":
+						util.Warning("call_in.go", "extension hangup", "NO_ROUTE_DESTINATION")
+						// con.Execute("hangup", ev.UId, t.Data)
+						return
 					}
 				}
 			}
-
-			h.Caller[ev.UId] = 1
 		}
 	case esl.CHANNEL_EXECUTE_COMPLETE:
+
 		log.Printf("%s - event %s %s %s\n", ev.UId, ev.Name, ev.App, ev.AppData)
 		// 主叫号码
 		callerNumber := ev.Get("Caller-Caller-ID-Number")
 		// 被叫号码
 		calleeNumber := ev.Get("Caller-Callee-ID-Number")
+		// 只有在h.Caller的map中的呼叫才被处理
+		if _, ok := h.Caller[ev.UId]; !ok {
+			util.Warning("call_in.go", "CHANNEL_EXECUTE_COMPLETE not need handle", map[string]string{"caller:": callerNumber, "callee:": calleeNumber})
+			return
+		}
 		// ivr menu
 		if ev.App == "play_and_get_digits" {
 			// fmt.Println(ev)
@@ -214,17 +229,20 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 				// direction := ev.Get("Call-Direction")
 				items := dialplan.PrepareIvrMenu(destinationNumber, callerNumber, ivrMenuExtension, dtmfDigits)
 				dialplan.ExecuteMenuEntry(con, ev.UId, items)
+				// viewDialplan(items)
 			} else if resultDTMF == "timeout" {
 				dtmfDigits := ev.Get("variable_foo_dtmf_digits")
 				destinationNumber := ev.Get("Caller-Destination-Number")
 				switch dtmfDigits {
 				case "*": // 最大长度大于1，*后不按#会超时，处理返回上级ivr
 					items := dialplan.PrepareIvrMenu(destinationNumber, callerNumber, ivrMenuExtension, dtmfDigits)
-					dialplan.ExecuteMenuEntry(con, ev.UId, items)
+					// dialplan.ExecuteMenuEntry(con, ev.UId, items)
+					viewDialplan(items)
 				default:
 					// 默认如果没有严格的正则表达式，不会播放输入错误的提示，输入按键不够的话，只能再次播放本层ivr
 					items := dialplan.PrepareIvrMenu(destinationNumber, callerNumber, ivrMenuExtension, "digitTimeout")
-					dialplan.ExecuteMenuEntry(con, ev.UId, items)
+					// dialplan.ExecuteMenuEntry(con, ev.UId, items)
+					viewDialplan(items)
 				}
 			} else if resultDTMF == "failure" || resultDTMF == "" {
 				// 彩铃不存在时，resultDTMF为空
@@ -242,6 +260,7 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 					destinationNumber := ev.Get("Caller-Destination-Number")
 					items := dialplan.PrepareSatisfySurvey(destinationNumber, calleeNumber)
 					dialplan.ExecuteSatisfySurvey(con, ev.UId, items)
+					// viewDialplan(items)
 				case "ALLOTTED_TIMEOUT":
 					// freeswitch自己挂断了。没有UUID，再次执行发生错误
 				case "NO_USER_RESPONSE":
@@ -265,11 +284,17 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 				}
 
 				dialplan.HandleSatisfySurvey(con, ev.UId, satisfySurveyDigits)
+				// fmt.Println("satisfySurveyDigits: ", satisfySurveyDigits)
 			}
 
 		}
 	case esl.BACKGROUND_JOB:
 	case esl.CHANNEL_ANSWER:
+		// 只有在h.Caller的map中的呼叫才被处理
+		if _, ok := h.Caller[ev.UId]; !ok {
+			util.Warning("call_in.go", "CHANNEL_ANSWER not need handle")
+			return
+		}
 		// fmt.Println(ev)
 		// 直转：先bleg answer，再aleg answer，然后进行bridge
 		// ivr：先aleg answer，再bridge, 然后bleg answer
@@ -284,9 +309,12 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 			callee := ev.Get("Caller-Callee-ID-Number")
 			record := dialplan.PrepareRecord(dialplanNumber, caller, callee)
 			dialplan.ExecuteRecord(con, callUId, record)
+			// viewDialplan(record)
 			// 报工号
 			blegJobnum := dialplan.PrepareSayJobnum(dialplanNumber, callee)
 			dialplan.ExecuteSayJobnum(con, callUId, blegJobnum)
+			// fmt.Println("callUId:", callUId, "blegJobnum", blegJobnum)
+			// viewDialplan(record)
 		}
 	case esl.DTMF:
 	case esl.CHANNEL_BRIDGE:
@@ -294,6 +322,11 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 	case esl.CHANNEL_DESTROY:
 		// fmt.Println(ev)
 	case esl.CHANNEL_HANGUP:
+		// 只有在h.Caller的map中的呼叫才被处理
+		if _, ok := h.Caller[ev.UId]; !ok {
+			util.Warning("call_in.go", "CHANNEL_HANGUP not need handle")
+			return
+		}
 		delete(h.Caller, ev.UId)
 		entity.UIdDtmfSyncMap.Delete(ev.UId)
 	}
@@ -313,3 +346,23 @@ ivr：但是被叫不接的话，就一直不挂机了。
 直转拒接的时候，leg_timeout设置的比较长，被叫人为提前挂，主叫不挂
 monitor_early_media_fail=user_busy:2:450 并没有什么用
 */
+
+// 先不处理呼入，打印查看数据
+func viewDialplan(items <-chan interface{}) {
+	for item := range items {
+		switch t := item.(type) {
+		case entity.Extension:
+			colorlog.Info("extension: %v\n", t)
+		case entity.Action:
+			colorlog.Info("action: %v\n", t)
+		case entity.Menu:
+			colorlog.Info("menu: %v\n", t)
+		case entity.Entry:
+			colorlog.Info("entry: %v\n", t)
+		case entity.MenuExecApp:
+			colorlog.Info("menuexecapp: %v\n", t)
+		default:
+			colorlog.Warning("undefined struct: %v\n", t)
+		}
+	}
+}
