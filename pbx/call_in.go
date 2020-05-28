@@ -204,9 +204,10 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 		callerNumber := ev.Get("Caller-Caller-ID-Number")
 		// 被叫号码
 		calleeNumber := ev.Get("Caller-Callee-ID-Number")
+		des := ev.Get("Caller-Destination-Number")
 		// 只有在h.Caller的map中的呼叫才被处理
 		if _, ok := h.Caller[ev.UId]; !ok {
-			util.Warning("call_in.go", "CHANNEL_EXECUTE_COMPLETE not need handle", map[string]string{"caller:": callerNumber, "callee:": calleeNumber})
+			util.Warning("call_in.go", "CHANNEL_EXECUTE_COMPLETE not need handle", map[string]string{"caller:": callerNumber, "callee:": calleeNumber, "des:": des})
 			return
 		}
 		// ivr menu
@@ -236,13 +237,13 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 				switch dtmfDigits {
 				case "*": // 最大长度大于1，*后不按#会超时，处理返回上级ivr
 					items := dialplan.PrepareIvrMenu(destinationNumber, callerNumber, ivrMenuExtension, dtmfDigits)
-					// dialplan.ExecuteMenuEntry(con, ev.UId, items)
-					viewDialplan(items)
+					dialplan.ExecuteMenuEntry(con, ev.UId, items)
+					// viewDialplan(items)
 				default:
 					// 默认如果没有严格的正则表达式，不会播放输入错误的提示，输入按键不够的话，只能再次播放本层ivr
 					items := dialplan.PrepareIvrMenu(destinationNumber, callerNumber, ivrMenuExtension, "digitTimeout")
-					// dialplan.ExecuteMenuEntry(con, ev.UId, items)
-					viewDialplan(items)
+					dialplan.ExecuteMenuEntry(con, ev.UId, items)
+					// viewDialplan(items)
 				}
 			} else if resultDTMF == "failure" || resultDTMF == "" {
 				// 彩铃不存在时，resultDTMF为空
@@ -292,7 +293,7 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 	case esl.CHANNEL_ANSWER:
 		// 只有在h.Caller的map中的呼叫才被处理
 		if _, ok := h.Caller[ev.UId]; !ok {
-			util.Warning("call_in.go", "CHANNEL_ANSWER not need handle")
+			util.Warning("call_in.go", "CHANNEL_ANSWER not need handle", map[string]string{"des:": ev.Get("Other-Leg-Destination-Number")})
 			return
 		}
 		// fmt.Println(ev)
@@ -324,7 +325,7 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 	case esl.CHANNEL_HANGUP:
 		// 只有在h.Caller的map中的呼叫才被处理
 		if _, ok := h.Caller[ev.UId]; !ok {
-			util.Warning("call_in.go", "CHANNEL_HANGUP not need handle")
+			util.Warning("call_in.go", "CHANNEL_HANGUP not need handle", map[string]string{"des:": ev.Get("Caller-Destination-Number")})
 			return
 		}
 		delete(h.Caller, ev.UId)

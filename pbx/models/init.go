@@ -38,7 +38,7 @@ func (self *Impl) InitDB() {
 	}
 
 	// self.DB.DB()获取到默认的*sql.DB
-	self.DB.DB().SetMaxIdleConns(10)
+	self.DB.DB().SetMaxIdleConns(60)
 
 }
 

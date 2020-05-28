@@ -400,18 +400,18 @@ func GetMenuByExtension(extension string) *entity.Menu {
 		menu.Err = CheckMenuValid(menu)
 		util.Info("controller/extension.go", "menu", menu)
 	}()
-	// first: get from redis
-	if err := util.GetCache(extension, menu); err == nil {
-		return menu
-	} else {
-		util.Error("controller/extension.go", "get menu from redis error", err)
-	}
-	// second: get from entity.MapExt
-	if menu, ok := entity.MapMenu[extension]; ok {
-		return menu
-	} else {
-		util.Error("controller/extension.go", "get menu from map error")
-	}
+	// // first: get from redis
+	// if err := util.GetCache(extension, menu); err == nil {
+	// 	return menu
+	// } else {
+	// 	util.Error("controller/extension.go", "get menu from redis error", err)
+	// }
+	// // second: get from entity.MapExt
+	// if menu, ok := entity.MapMenu[extension]; ok {
+	// 	return menu
+	// } else {
+	// 	util.Error("controller/extension.go", "get menu from map error")
+	// }
 	// third: get from database
 	params := models.MenuQueryParam{Extension: extension}
 	menuDetail := models.GetAllIvrMenuDetail(&params)

@@ -110,11 +110,11 @@ func ExecuteExtension(con *esl.Connection, UId string, items <-chan entity.Exten
 					extraHandle <- action
 					continue
 				}
-				if action.Sync == true {
-					con.ExecuteSync(action.App, UId, action.Data)
-				} else {
-					con.Execute(action.App, UId, action.Data)
-				}
+				// if action.Sync == true {
+				// 	con.ExecuteSync(action.App, UId, action.Data)
+				// } else {
+				// 	con.Execute(action.App, UId, action.Data)
+				// }
 			}
 		}
 		close(extraHandle)

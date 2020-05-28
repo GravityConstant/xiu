@@ -3,6 +3,8 @@ package models
 import (
 	"fmt"
 	"strings"
+
+	"xiu/pbx/util"
 )
 
 type Extension struct {
@@ -44,6 +46,9 @@ func GetAllDialplanDetail(params *ExtensionQueryParam) []*Extension {
 
 	dds := make([]*Extension, 0)
 	ImplInstance.DB.Raw(sql).Scan(&dds)
+	if ImplInstance.DB.Error != nil {
+		util.Error("db GetAllDialplanDetail", " error occur: ", ImplInstance.DB.Error)
+	}
 
 	return dds
 }
@@ -94,7 +99,7 @@ func GetAllIvrMenuDetail(params *MenuQueryParam) []*Menu {
 
 	}
 	for _, val := range mw {
-		where += val + " and"
+		where += "and " + val + " and"
 	}
 	where = strings.TrimSuffix(where, "and")
 	// sql combine
@@ -102,6 +107,9 @@ func GetAllIvrMenuDetail(params *MenuQueryParam) []*Menu {
 
 	menu := make([]*Menu, 0)
 	ImplInstance.DB.Raw(sql).Scan(&menu)
+	if ImplInstance.DB.Error != nil {
+		util.Error("db GetAllIvrMenuDetail", " error occur: ", ImplInstance.DB.Error)
+	}
 
 	return menu
 }
