@@ -180,7 +180,8 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 				case entity.Action:
 					switch t.App {
 					case "bridge":
-						items := dialplan.PrepareBridge(destinationNumber, callerNumber, t.Data)
+						// 这里进行修改。。。
+						items := dialplan.PrepareBridge(destinationNumber, callerNumber, t.Data, t.Params)
 						dialplan.ExecuteBridge(con, ev.UId, items)
 						// viewDialplan(items)
 						h.Caller[ev.UId] = 1
@@ -205,10 +206,14 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 		// 被叫号码
 		calleeNumber := ev.Get("Caller-Callee-ID-Number")
 		des := ev.Get("Caller-Destination-Number")
+		// 可能是belg进来，要查找另外一个脚
+		otherLeg := ev.Get("Other-Leg-Unique-ID")
 		// 只有在h.Caller的map中的呼叫才被处理
 		if _, ok := h.Caller[ev.UId]; !ok {
-			util.Warning("call_in.go", "CHANNEL_EXECUTE_COMPLETE not need handle", map[string]string{"caller:": callerNumber, "callee:": calleeNumber, "des:": des})
-			return
+			if _, ok := h.Caller[otherLeg]; !ok {
+				util.Warning("call_in.go", "CHANNEL_EXECUTE_COMPLETE not need handle", map[string]string{"caller:": callerNumber, "callee:": calleeNumber, "des:": des})
+				return
+			}
 		}
 		// ivr menu
 		if ev.App == "play_and_get_digits" {
@@ -291,10 +296,14 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 		}
 	case esl.BACKGROUND_JOB:
 	case esl.CHANNEL_ANSWER:
+		// 可能是belg进来，要查找另外一个脚
+		otherLeg := ev.Get("Other-Leg-Unique-ID")
 		// 只有在h.Caller的map中的呼叫才被处理
 		if _, ok := h.Caller[ev.UId]; !ok {
-			util.Warning("call_in.go", "CHANNEL_ANSWER not need handle", map[string]string{"des:": ev.Get("Other-Leg-Destination-Number")})
-			return
+			if _, ok := h.Caller[otherLeg]; !ok {
+				util.Warning("call_in.go", "CHANNEL_ANSWER not need handle", map[string]string{"des:": ev.Get("Other-Leg-Destination-Number")})
+				return
+			}
 		}
 		// fmt.Println(ev)
 		// 直转：先bleg answer，再aleg answer，然后进行bridge
@@ -323,10 +332,14 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 	case esl.CHANNEL_DESTROY:
 		// fmt.Println(ev)
 	case esl.CHANNEL_HANGUP:
+		// 可能是belg进来，要查找另外一个脚
+		otherLeg := ev.Get("Other-Leg-Unique-ID")
 		// 只有在h.Caller的map中的呼叫才被处理
 		if _, ok := h.Caller[ev.UId]; !ok {
-			util.Warning("call_in.go", "CHANNEL_HANGUP not need handle", map[string]string{"des:": ev.Get("Caller-Destination-Number")})
-			return
+			if _, ok := h.Caller[otherLeg]; !ok {
+				util.Warning("call_in.go", "CHANNEL_HANGUP not need handle", map[string]string{"des:": ev.Get("Caller-Destination-Number")})
+				return
+			}
 		}
 		delete(h.Caller, ev.UId)
 		entity.UIdDtmfSyncMap.Delete(ev.UId)

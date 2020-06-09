@@ -17,6 +17,7 @@ type Extension struct {
 	DialplanDetailOrder int64
 	DialplanDetailApp   string
 	DialplanDetailData  string
+	ResponseType        int
 }
 
 type ExtensionQueryParam struct {
@@ -26,7 +27,7 @@ type ExtensionQueryParam struct {
 
 func GetAllDialplanDetail(params *ExtensionQueryParam) []*Extension {
 
-	sql := `SELECT d.id dialplan_id, dialplan_name, dialplan_context, dialplan_number, dialplan_enabled, dd.id dialplan_detail_id, orderid dialplan_detail_order, (SELECT name from %s where id=dd.dialplan_detail_type_id) dialplan_detail_app, dialplan_detail_data FROM %s d, %s dd WHERE dd.dialplan_id=d.id %s order by d.id`
+	sql := `SELECT d.id dialplan_id, dialplan_name, dialplan_context, dialplan_number, dialplan_enabled, dd.id dialplan_detail_id, orderid dialplan_detail_order, dd.response_type, (SELECT name from %s where id=dd.dialplan_detail_type_id) dialplan_detail_app, dialplan_detail_data FROM %s d, %s dd WHERE dd.dialplan_id=d.id %s order by d.id`
 	// condition
 	var where string
 	mw := make(map[string]string)
@@ -54,14 +55,15 @@ func GetAllDialplanDetail(params *ExtensionQueryParam) []*Extension {
 }
 
 type Menu struct {
-	Id        int64
-	ParentId  int64  `gorm:"column:ivr_menu_parent_id"`
-	Extension string `gorm:"column:ivr_menu_extension"`
-	File      string //
-	DigitLen  int    `gorm:"column:ivr_menu_digit_len"`
-	App       string //
-	Digits    string `gorm:"column:ivr_menu_option_digits"`
-	Param     string `gorm:"column:ivr_menu_option_param"`
+	Id           int64
+	ParentId     int64  `gorm:"column:ivr_menu_parent_id"`
+	Extension    string `gorm:"column:ivr_menu_extension"`
+	File         string //
+	DigitLen     int    `gorm:"column:ivr_menu_digit_len"`
+	App          string //
+	Digits       string `gorm:"column:ivr_menu_option_digits"`
+	Param        string `gorm:"column:ivr_menu_option_param"`
+	ResponseType int
 }
 
 type MenuQueryParam struct {
@@ -82,28 +84,60 @@ UNION ALL
 	JOIN t on d.ivr_menu_parent_id = t.id
 )
 SELECT t.id, t.ivr_menu_name, t.ivr_menu_extension, t.ivr_menu_greet_long_id, t.ivr_menu_digit_len, t.ivr_menu_parent_id,
-o.ivr_menu_option_digits, o.ivr_menu_option_param
+o.ivr_menu_option_digits, o.ivr_menu_option_param, o.response_type
 from t
 LEFT JOIN call_ivr_menu_options o on t.id=o.ivr_menu_id
 ORDER BY t.ivr_menu_extension
 */
 func GetAllIvrMenuDetail(params *MenuQueryParam) []*Menu {
 
-	sql := `WITH RECURSIVE t(id, ivr_menu_name, ivr_menu_extension, ivr_menu_greet_long_id, ivr_menu_digit_len, ivr_menu_parent_id) as (SELECT id, ivr_menu_name, ivr_menu_extension, ivr_menu_greet_long_id, ivr_menu_digit_len, ivr_menu_parent_id FROM %s where ivr_menu_parent_id=0 %s UNION ALL SELECT d.id, d.ivr_menu_name, d.ivr_menu_extension, d.ivr_menu_greet_long_id, d.ivr_menu_digit_len, d.ivr_menu_parent_id from %s d JOIN t on d.ivr_menu_parent_id = t.id) SELECT t.id, t.ivr_menu_name, t.ivr_menu_extension, (SELECT ring_path from %s where id=t.ivr_menu_greet_long_id) file, t.ivr_menu_digit_len, t.ivr_menu_parent_id,  o.ivr_menu_option_digits, (SELECT name from call_operation where id=o.ivr_menu_option_action_id) app, o.ivr_menu_option_param from t LEFT JOIN %s o on t.id=o.ivr_menu_id ORDER BY t.ivr_menu_extension`
+	sql := `WITH RECURSIVE t(id, ivr_menu_name, ivr_menu_extension, ivr_menu_greet_long_id, ivr_menu_digit_len, ivr_menu_parent_id) as (SELECT id, ivr_menu_name, ivr_menu_extension, ivr_menu_greet_long_id, ivr_menu_digit_len, ivr_menu_parent_id FROM %s where ivr_menu_parent_id=0 %s UNION ALL SELECT d.id, d.ivr_menu_name, d.ivr_menu_extension, d.ivr_menu_greet_long_id, d.ivr_menu_digit_len, d.ivr_menu_parent_id from %s d JOIN t on d.ivr_menu_parent_id = t.id) SELECT t.id, t.ivr_menu_name, t.ivr_menu_extension, (SELECT ring_path from %s where id=t.ivr_menu_greet_long_id) file, t.ivr_menu_digit_len, t.ivr_menu_parent_id,  o.ivr_menu_option_digits, (SELECT name from call_operation where id=o.ivr_menu_option_action_id) app, o.ivr_menu_option_param, o.response_type from t LEFT JOIN %s o on t.id=o.ivr_menu_id ORDER BY t.ivr_menu_extension`
 	// condition
 	var where string
 	mw := make(map[string]string)
 	if len(params.Extension) > 0 {
-		mw["extension"] = `ivr_menu_extension='%s'`
+		mw["extension"] = `and ivr_menu_extension='%s' `
 		mw["extension"] = fmt.Sprintf(mw["extension"], params.Extension)
 
 	}
 	for _, val := range mw {
-		where += "and " + val + " and"
+		where += val
 	}
-	where = strings.TrimSuffix(where, "and")
 	// sql combine
 	sql = fmt.Sprintf(sql, IvrMenuTBName(), where, IvrMenuTBName(), RingsTBName(), IvrMenuOptionTBName())
+
+	menu := make([]*Menu, 0)
+	ImplInstance.DB.Raw(sql).Scan(&menu)
+	if ImplInstance.DB.Error != nil {
+		util.Error("db GetAllIvrMenuDetail", " error occur: ", ImplInstance.DB.Error)
+	}
+
+	return menu
+}
+
+func GetIvrMenuDetailOne(params *MenuQueryParam) []*Menu {
+	sql := `SELECT t.id, t.ivr_menu_name, t.ivr_menu_extension, 
+			  (SELECT ring_path from call_rings where id=t.ivr_menu_greet_long_id) file, 
+			  t.ivr_menu_digit_len, t.ivr_menu_parent_id, o.ivr_menu_option_digits, 
+			  (SELECT name from call_operation where id=o.ivr_menu_option_action_id) app, 
+			  o.ivr_menu_option_param, o.response_type 
+			from call_ivr_menus t LEFT JOIN call_ivr_menu_options o on t.id=o.ivr_menu_id 
+			%s  
+			ORDER BY t.ivr_menu_extension`
+	// condition
+	var where string
+	mw := make(map[string]string)
+	if len(params.Extension) > 0 {
+		where = "where "
+		mw["extension"] = `ivr_menu_extension='%s' `
+		mw["extension"] = fmt.Sprintf(mw["extension"], params.Extension)
+	}
+	for _, val := range mw {
+		where += val + "and "
+	}
+	where = strings.TrimSuffix(where, "and ")
+	// sql combine
+	sql = fmt.Sprintf(sql, where)
 
 	menu := make([]*Menu, 0)
 	ImplInstance.DB.Raw(sql).Scan(&menu)

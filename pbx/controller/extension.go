@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 
 	"xiu/pbx/entity"
@@ -284,6 +285,12 @@ func PrintCache() {
 
 	util.Debug("controller/extension.go", "is original MapExt?", entity.MapExt)
 	util.Debug("controller/extension.go", "is original MapMenu?", entity.MapMenu)
+
+	ms := models.GetAllIvrMenuDetail(&models.MenuQueryParam{Extension: "40004004261000"})
+	for _, item := range ms {
+		fmt.Print(item)
+	}
+	fmt.Println()
 }
 
 // 得到dialplanNumber对应的Extension
@@ -340,25 +347,23 @@ func GetExtensionByDialplanNumberResult(dialplanDetail []*models.Extension) *ent
 	}
 	exportDialplanId.Data = fmt.Sprintf(exportDialplanId.Data, dialplanDetail[0].DialplanId)
 	extension.Actions = append(extension.Actions, exportDialplanId)
-	// 默认ivr呼叫铃音
-	transferRingback := entity.Action{
-		Order: 0,
-		App:   "set",
-		Data:  "transfer_ringback=/home/voices/rings/common/ivr_transfer.wav",
-	}
-	extension.Actions = append(extension.Actions, transferRingback)
 
-	action := entity.Action{}
+	isIvr := false
+	action := entity.Action{Params: map[string]string{}}
 	for _, item := range dialplanDetail {
 		if !item.DialplanEnabled {
-			return &ext0
+			return &entity.Extension{}
 		}
 		action.Order = item.DialplanDetailOrder
 		// ivr另外处理
 		if item.DialplanDetailApp == "submenu" {
 			action.App = "ivr"
+			isIvr = true
 		} else {
 			action.App = strings.TrimSpace(item.DialplanDetailApp)
+			if item.DialplanDetailApp == "bridge" {
+				action.Params = map[string]string{"ResponseType": strconv.Itoa(item.ResponseType)}
+			}
 		}
 		action.Data = strings.TrimSpace(item.DialplanDetailData)
 
@@ -376,6 +381,23 @@ func GetExtensionByDialplanNumberResult(dialplanDetail []*models.Extension) *ent
 			extension.Actions = append(extension.Actions, action)
 		}
 		action = entity.Action{}
+	}
+	// ivr set transfer_ringback and answer
+	if isIvr {
+		// 默认ivr呼叫铃音
+		transferRingback := entity.Action{
+			Order: 0,
+			App:   "set",
+			Data:  "transfer_ringback=/home/voices/rings/common/ivr_transfer.wav",
+		}
+		extension.Actions = append(extension.Actions, transferRingback)
+		// set answer
+		answer := entity.Action{
+			Order: 0,
+			App:   "answer",
+			Data:  "",
+		}
+		extension.Actions = append(extension.Actions, answer)
 	}
 	// 保存到redis
 	if util.CheckRedis() {
@@ -414,7 +436,7 @@ func GetMenuByExtension(extension string) *entity.Menu {
 	// }
 	// third: get from database
 	params := models.MenuQueryParam{Extension: extension}
-	menuDetail := models.GetAllIvrMenuDetail(&params)
+	menuDetail := models.GetIvrMenuDetailOne(&params)
 	menu = GetMenuByExtensionResult(menuDetail, extension)
 	return menu
 }
@@ -487,6 +509,7 @@ func GetMenuByExtensionResult(menuDetail []*models.Menu, extension string) *enti
 			entry = entryApp
 			entry.Digits = item.Digits
 			entry.Param = fmt.Sprintf(entryApp.Param, "bridge", item.Param)
+			entry.Extra = map[string]string{"ResponseType": strconv.Itoa(item.ResponseType)}
 		default:
 			entry = entity.Entry{}
 		}

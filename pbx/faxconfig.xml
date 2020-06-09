@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="utf-8"?>
+<faxconfig><dbserver/><username>netfax</username><password>netfax</password><dbname>netfax</dbname><dbtype>2</dbtype><faxnumber>0</faxnumber><faxplannum>0</faxplannum><faxalarmnum>0</faxalarmnum><faxpath>e:\fax</faxpath></faxconfig>

@@ -2,8 +2,10 @@ package controller
 
 import (
 	"fmt"
+	"math/rand"
 	"strings"
 	"sync"
+	"time"
 
 	"xiu/pbx/models"
 	"xiu/pbx/util"
@@ -12,6 +14,9 @@ import (
 type Outcall struct {
 	CallString string
 }
+
+// 绑定号码乱序排序，随机接听使用
+type data []models.BindPhone
 
 const (
 	// {ignore_early_media=true,originate_continue_on_timeout=true}[leg_timeout=15]sofia/gateway/zqzj/13675017141|[leg_timeout=25]sofia/gateway/zqzj/83127866"
@@ -24,7 +29,7 @@ func init() {
 	// genome editing
 }
 
-func (self *Outcall) GetCallString(diversion, caller, bpIds string) {
+func (self *Outcall) GetCallString(diversion, caller, bpIds string, responseType int) {
 	// `{originate_timeout=%d,sip_h_Diversion=<sip:%s@ip>}sofia/gateway/zqzj/13675017141`
 
 	// bpIds为空，直接返回
@@ -82,6 +87,8 @@ func (self *Outcall) GetCallString(diversion, caller, bpIds string) {
 
 	if len(resultBindPhones) > 0 {
 		gw, ip := GetGatewayByAreaCode(resultBindPhones[0].AreaCode)
+		// 随机接听打乱顺序
+		data(resultBindPhones).random()
 		for _, bp := range resultBindPhones {
 
 			pP = fmt.Sprintf(privateParam, bp.WaitTime, gw, bp.BindPhone)
@@ -264,4 +271,69 @@ func GetGatewayByAreaCode(code string) (gw, ip string) {
 		ip = "192.168.1.213"
 	}
 	return
+}
+
+func (d data) random() {
+	rand.Seed(time.Now().Unix())
+	strsLen := len(d)
+
+	ns := make([]int, strsLen)
+	for i := 0; i < strsLen; i++ {
+		ns[i] = -1
+	}
+	// fmt.Println("init:", ns, strsLen)
+
+	res := make(data, strsLen)
+
+	for i := 0; i < strsLen; i++ {
+		n := rand.Intn(strsLen)
+		n = getPosition(n, strsLen, ns, true)
+		// fmt.Println("real n: ", n)
+		ns[i] = n
+		res[i] = d[n]
+	}
+	copy(d, res)
+}
+
+// 还是要用结构体写，不然麻烦
+func random(strs []string) []string {
+	rand.Seed(time.Now().Unix())
+	strsLen := len(strs)
+
+	ns := make([]int, strsLen)
+	for i := 0; i < strsLen; i++ {
+		ns[i] = -1
+	}
+	// fmt.Println("init:", ns, strsLen)
+
+	res := make([]string, strsLen)
+
+	for i := 0; i < strsLen; i++ {
+		n := rand.Intn(strsLen)
+		n = getPosition(n, strsLen, ns, true)
+		// fmt.Println("real n: ", n)
+		ns[i] = n
+		res[i] = strs[n]
+	}
+	return res
+}
+
+func getPosition(e, l int, ns []int, up bool) (v int) {
+	fmt.Println("in position:", e, ns)
+	for _, n := range ns {
+		if n == e {
+			if e == 0 {
+				e = getPosition(e+1, l, ns, true)
+			} else if e == l-1 {
+				e = getPosition(e-1, l, ns, false)
+			} else {
+				if up {
+					e = getPosition(e+1, l, ns, true)
+				} else {
+					e = getPosition(e-1, l, ns, false)
+				}
+			}
+		}
+	}
+	return e
 }

@@ -8,6 +8,7 @@ type Extension struct {
 	IsRecord        bool
 	IsSayJobnum     bool
 	IsSatisfySurvey bool
+	ResponseType    int // 0(default):顺序接听, 1:随机接听
 }
 
 type Action struct {
@@ -16,6 +17,7 @@ type Action struct {
 	Data     string
 	Sync     bool
 	Executed bool
+	Params   map[string]string
 }
 
 type ByOrder []Action

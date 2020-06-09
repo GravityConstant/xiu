@@ -30,6 +30,7 @@ type Entry struct {
 	Action string
 	Digits string
 	Param  string
+	Extra  map[string]string
 }
 
 type MenuExecApp struct {

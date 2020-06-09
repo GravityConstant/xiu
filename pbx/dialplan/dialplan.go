@@ -110,11 +110,11 @@ func ExecuteExtension(con *esl.Connection, UId string, items <-chan entity.Exten
 					extraHandle <- action
 					continue
 				}
-				// if action.Sync == true {
-				// 	con.ExecuteSync(action.App, UId, action.Data)
-				// } else {
-				// 	con.Execute(action.App, UId, action.Data)
-				// }
+				if action.Sync == true {
+					con.ExecuteSync(action.App, UId, action.Data)
+				} else {
+					con.Execute(action.App, UId, action.Data)
+				}
 			}
 		}
 		close(extraHandle)
@@ -245,7 +245,7 @@ func PrepareIvrMenu(dialplanNumber, callerNumber, ivrMenuExtension, dtmfDigits s
 						action := entity.MenuExecApp{
 							App:   params[0],
 							Data:  params[1],
-							Extra: []string{dialplanNumber, callerNumber},
+							Extra: []string{dialplanNumber, callerNumber, entry.Extra["ResponseType"]},
 						}
 						items <- action
 					case "menu-sub": // 跳到下层ivr
@@ -312,7 +312,7 @@ func ExecuteMenuEntry(con *esl.Connection, UId string, entrys <-chan interface{}
 			case entity.MenuExecApp:
 				switch item.App {
 				case "bridge":
-					bridgeItem := PrepareBridge(item.Extra[0], item.Extra[1], item.Data)
+					bridgeItem := PrepareBridge(item.Extra[0], item.Extra[1], item.Data, map[string]string{"ResponseType": item.Extra[2]})
 					ExecuteBridge(con, UId, bridgeItem)
 					// 使用playback,外呼的时候还是没有回铃音
 					// con.Execute("playback", UId, "/home/voices/rings/common/ivr_transfer.wav")
@@ -530,11 +530,15 @@ func ExecuteRecord(con *esl.Connection, UId string, items <-chan interface{}) {
 	}()
 }
 
-func PrepareBridge(dialplanNumber, callerNumber, bpIds string) <-chan interface{} {
+func PrepareBridge(dialplanNumber, callerNumber, bpIds string, params map[string]string) <-chan interface{} {
 	items := make(chan interface{})
 	go func() {
+		var rs int
+		if v, ok := params["ResponseType"]; ok {
+			rs, _ = strconv.Atoi(v)
+		}
 		outcall := &controller.Outcall{}
-		outcall.GetCallString(dialplanNumber, callerNumber, bpIds)
+		outcall.GetCallString(dialplanNumber, callerNumber, bpIds, rs)
 
 		var bridge entity.Action
 		if len(outcall.CallString) == 0 {
