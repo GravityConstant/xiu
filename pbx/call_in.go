@@ -9,7 +9,7 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
+	// "fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -78,9 +78,9 @@ func main() {
 	// business code
 	go func() {
 	RESTART:
-		fmt.Println("////////////////////////////////////////////////////")
-		fmt.Println("//                event                           //")
-		fmt.Println("////////////////////////////////////////////////////")
+		util.Info("call_in.go", "start", "////////////////////////////////////////////////////")
+		util.Info("call_in.go", "start", "//                event                           //")
+		util.Info("call_in.go", "start", "////////////////////////////////////////////////////")
 
 		con, err := esl.NewConnection("127.0.0.1:8021", handler)
 		if err != nil {
@@ -271,7 +271,7 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 					// freeswitch自己挂断了。没有UUID，再次执行发生错误
 				case "NO_USER_RESPONSE":
 					if _, err := con.Execute("hangup", ev.UId, ""); err != nil {
-						util.Error("call_in.go", "160", err)
+						util.Error("call_in.go", "no_user_response", err)
 					}
 				}
 			}

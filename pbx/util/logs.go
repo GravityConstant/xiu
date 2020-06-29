@@ -126,3 +126,36 @@ func ExampleLogs() {
 	Fatal("call_in.go", "42", PbxConfigInstance.Get("postgres::port"))
 	Panic("call_in.go", "43", PbxConfigInstance.Get("postgres::sslmode"))
 }
+
+func getTimeFileAbsPath() string {
+	dirname := filepath.Dir(".")
+	logpath := filepath.Join(dirname, "logs")
+	filename := filepath.Join(logpath, "pbx.log", time.Now().Format("2006-01-02-15-04-05"))
+
+	return filename
+}
+
+type logFileWriter struct {
+	file *os.File
+	//write count
+	size int64
+}
+
+func (p *logFileWriter) Write(data []byte) (n int, err error) {
+	if p == nil {
+		return 0, errors.New("logFileWriter is nil")
+	}
+	if p.file == nil {
+		return 0, errors.New("file not opened")
+	}
+	n, e := p.file.Write(data)
+	p.size += int64(n)
+	//文件最大 64K byte
+	if p.size > 1024*1024*11 {
+		p.file.Close()
+		fmt.Println("log file full")
+		p.file, _ = os.OpenFile(getTimeFileAbsPath(), os.O_WRONLY|os.O_APPEND|os.O_CREATE|os.O_SYNC, 0600)
+		p.size = 0
+	}
+	return n, e
+}

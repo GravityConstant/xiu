@@ -87,8 +87,11 @@ func (self *Outcall) GetCallString(diversion, caller, bpIds string, responseType
 
 	if len(resultBindPhones) > 0 {
 		gw, ip := GetGatewayByAreaCode(resultBindPhones[0].AreaCode)
-		// 随机接听打乱顺序
-		data(resultBindPhones).random()
+		if responseType == 1 {
+			// 随机接听打乱顺序
+			util.Info("direct.go", "response_type: rand_answer", responseType)
+			data(resultBindPhones).random()
+		}
 		for _, bp := range resultBindPhones {
 
 			pP = fmt.Sprintf(privateParam, bp.WaitTime, gw, bp.BindPhone)

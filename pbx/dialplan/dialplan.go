@@ -448,6 +448,8 @@ func ExecuteSatisfySurvey(con *esl.Connection, UId string, items <-chan interfac
 				params := `1 1 %s foo_satisfy_survey_digits 3000 #`
 				params = fmt.Sprintf(params, t.PrefixFile)
 				con.Execute("read", UId, params)
+			case string:
+				// no need handle
 			default:
 				con.Execute("hangup", UId, "")
 			}
