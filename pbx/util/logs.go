@@ -1,14 +1,27 @@
 package util
 
 import (
+	"errors"
+	"fmt"
+	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
+	"sync"
+	"time"
 
 	"github.com/sirupsen/logrus"
 )
 
-var logpbx = logrus.New()
+const (
+	maxSize = 11 * 1024 * 1024
+)
+
+var (
+	logpbx = logrus.New()
+	wg     sync.WaitGroup
+)
 
 func InitLog() {
 	runmode := PbxConfigInstance.Get("runmode")
@@ -36,19 +49,43 @@ func InitLog() {
 		logpath := filepath.Join(dirname, "logs")
 		filename := filepath.Join(logpath, "pbx.log")
 
-		// runmode
-		if err := os.MkdirAll(logpath, 0666); err == nil {
-			file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-			if err == nil {
-				logpbx.Out = file
-			} else {
-				logpbx.Info("Failed to logpbx to file, using default stderr")
+		file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+		if err == nil {
+			info, err := file.Stat()
+			if err != nil {
+				log.Panic(err)
+			}
+			fileSize := info.Size()
+			if fileSize > maxSize {
+				file.Close()
+				fmt.Printf("source: %s, destination: %s\n", filename, getTimeFileAbsPath())
+				cmd := exec.Command("mv", filename, getTimeFileAbsPath())
+				if err = cmd.Run(); err != nil {
+					log.Panic(err)
+				}
+				fileSize = 0
+
+				file, err = os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+				if err != nil {
+					log.Panic(err)
+				}
 			}
 
+			fileWriter := logFileWriter{file, fileSize}
+			logpbx.SetOutput(&fileWriter)
 		} else {
-			logpbx.Info("Failed to create file, using default stderr")
+			if err := os.MkdirAll(logpath, 0666); err == nil {
+				file, err = os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+				if err != nil {
+					log.Panic(err)
+				}
+				fileWriter := logFileWriter{file, 0}
+				logpbx.SetOutput(&fileWriter)
+			} else {
+				log.Panic(err)
+			}
 		}
-
+		// logTest()
 	}
 }
 
@@ -127,12 +164,28 @@ func ExampleLogs() {
 	Panic("call_in.go", "43", PbxConfigInstance.Get("postgres::sslmode"))
 }
 
+func logTest() {
+	logpbx.Warn("start...")
+	for i := 0; i < 100; i++ {
+		wg.Add(1)
+		go func(i int) {
+			for j := 0; j < 100; j++ {
+				logpbx.Info("Thread:", i, " value:", j)
+				time.Sleep(10 * time.Millisecond)
+			}
+			wg.Done()
+		}(i)
+	}
+	logpbx.Warn("waitting...")
+	wg.Wait()
+}
+
 func getTimeFileAbsPath() string {
 	dirname := filepath.Dir(".")
 	logpath := filepath.Join(dirname, "logs")
-	filename := filepath.Join(logpath, "pbx.log", time.Now().Format("2006-01-02-15-04-05"))
+	filename := fmt.Sprintf("%s.%s", "pbx.log", time.Now().Format("2006-01-02-15-04-05"))
 
-	return filename
+	return filepath.Join(logpath, filename)
 }
 
 type logFileWriter struct {
@@ -151,10 +204,15 @@ func (p *logFileWriter) Write(data []byte) (n int, err error) {
 	n, e := p.file.Write(data)
 	p.size += int64(n)
 	//文件最大 64K byte
-	if p.size > 1024*1024*11 {
+	if p.size > maxSize {
+		filename := p.file.Name()
 		p.file.Close()
-		fmt.Println("log file full")
-		p.file, _ = os.OpenFile(getTimeFileAbsPath(), os.O_WRONLY|os.O_APPEND|os.O_CREATE|os.O_SYNC, 0600)
+		cmd := exec.Command("mv", filename, getTimeFileAbsPath())
+		if err = cmd.Run(); err != nil {
+			logpbx.Error(err)
+		}
+		logpbx.Warn("log file full")
+		p.file, _ = os.OpenFile(filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE|os.O_SYNC, 0600)
 		p.size = 0
 	}
 	return n, e
