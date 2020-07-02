@@ -85,7 +85,7 @@ func InitLog() {
 				log.Panic(err)
 			}
 		}
-		// logTest()
+		logTest()
 	}
 }
 

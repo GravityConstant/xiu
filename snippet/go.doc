@@ -1,0 +1,380 @@
+runtime/atomic_pointer.go://go:linkname sync_atomic_StoreUintptr sync/atomic.StoreUintptr
+runtime/atomic_pointer.go://go:linkname sync_atomic_StorePointer sync/atomic.StorePointer
+runtime/atomic_pointer.go://go:linkname sync_atomic_SwapUintptr sync/atomic.SwapUintptr
+runtime/atomic_pointer.go://go:linkname sync_atomic_SwapPointer sync/atomic.SwapPointer
+runtime/atomic_pointer.go://go:linkname sync_atomic_CompareAndSwapUintptr sync/atomic.CompareAndSwapUintptr
+runtime/atomic_pointer.go://go:linkname sync_atomic_CompareAndSwapPointer sync/atomic.CompareAndSwapPointer
+runtime/cgo.go://go:linkname _cgo_init _cgo_init
+runtime/cgo.go://go:linkname _cgo_thread_start _cgo_thread_start
+runtime/cgo.go://go:linkname _cgo_sys_thread_create _cgo_sys_thread_create
+runtime/cgo.go://go:linkname _cgo_notify_runtime_init_done _cgo_notify_runtime_init_done
+runtime/cgo.go://go:linkname _cgo_callers _cgo_callers
+runtime/cgo.go://go:linkname _cgo_set_context_function _cgo_set_context_function
+runtime/cgo.go://go:linkname _cgo_yield _cgo_yield
+runtime/cgo.go:// cgoUse is called by cgo-generated code (using go:linkname to get at
+runtime/cgo_mmap.go://go:linkname _cgo_mmap _cgo_mmap
+runtime/cgo_mmap.go://go:linkname _cgo_munmap _cgo_munmap
+runtime/cgo_sigaction.go://go:linkname _cgo_sigaction _cgo_sigaction
+runtime/chan.go://go:linkname reflect_makechan reflect.makechan
+runtime/chan.go://go:linkname reflect_chansend reflect.chansend
+runtime/chan.go://go:linkname reflect_chanrecv reflect.chanrecv
+runtime/chan.go://go:linkname reflect_chanlen reflect.chanlen
+runtime/chan.go://go:linkname reflectlite_chanlen internal/reflectlite.chanlen
+runtime/chan.go://go:linkname reflect_chancap reflect.chancap
+runtime/chan.go://go:linkname reflect_chanclose reflect.chanclose
+runtime/cpuprof.go://go:linkname runtime_pprof_runtime_cyclesPerSecond runtime/pprof.runtime_cyclesPerSecond
+runtime/cpuprof.go://go:linkname runtime_pprof_readProfile runtime/pprof.readProfile
+runtime/debug.go://go:linkname debug_modinfo runtime/debug.modinfo
+runtime/env_posix.go://go:linkname syscall_setenv_c syscall.setenv_c
+runtime/env_posix.go://go:linkname syscall_unsetenv_c syscall.unsetenv_c
+runtime/heapdump.go://go:linkname runtime_debug_WriteHeapDump runtime/debug.WriteHeapDump
+runtime/iface.go://go:linkname reflect_ifaceE2I reflect.ifaceE2I
+runtime/iface.go://go:linkname reflectlite_ifaceE2I internal/reflectlite.ifaceE2I
+runtime/lock_js.go://go:linkname setEventHandler syscall/js.setEventHandler
+runtime/malloc.go://go:linkname reflect_unsafe_New reflect.unsafe_New
+runtime/malloc.go://go:linkname reflectlite_unsafe_New internal/reflectlite.unsafe_New
+runtime/malloc.go://go:linkname reflect_unsafe_NewArray reflect.unsafe_NewArray
+runtime/map.go://go:linkname reflect_makemap reflect.makemap
+runtime/map.go://go:linkname reflect_mapaccess reflect.mapaccess
+runtime/map.go://go:linkname reflect_mapassign reflect.mapassign
+runtime/map.go://go:linkname reflect_mapdelete reflect.mapdelete
+runtime/map.go://go:linkname reflect_mapiterinit reflect.mapiterinit
+runtime/map.go://go:linkname reflect_mapiternext reflect.mapiternext
+runtime/map.go://go:linkname reflect_mapiterkey reflect.mapiterkey
+runtime/map.go://go:linkname reflect_mapiterelem reflect.mapiterelem
+runtime/map.go://go:linkname reflect_maplen reflect.maplen
+runtime/map.go://go:linkname reflectlite_maplen internal/reflectlite.maplen
+runtime/map.go://go:linkname reflect_ismapkey reflect.ismapkey
+runtime/mbarrier.go://go:linkname reflect_typedmemmove reflect.typedmemmove
+runtime/mbarrier.go://go:linkname reflectlite_typedmemmove internal/reflectlite.typedmemmove
+runtime/mbarrier.go://go:linkname reflect_typedmemmovepartial reflect.typedmemmovepartial
+runtime/mbarrier.go://go:linkname reflect_typedslicecopy reflect.typedslicecopy
+runtime/mbarrier.go://go:linkname reflect_typedmemclr reflect.typedmemclr
+runtime/mbarrier.go://go:linkname reflect_typedmemclrpartial reflect.typedmemclrpartial
+runtime/mbitmap.go://go:linkname reflect_gcbits reflect.gcbits
+runtime/mgc.go://go:linkname setGCPercent runtime/debug.setGCPercent
+runtime/mgc.go://go:linkname sync_runtime_registerPoolCleanup sync.runtime_registerPoolCleanup
+runtime/mheap.go://go:linkname runtime_debug_freeOSMemory runtime/debug.freeOSMemory
+runtime/mprof.go://go:linkname mutexevent sync.event
+runtime/mstats.go://go:linkname readGCStats runtime/debug.readGCStats
+runtime/net_plan9.go://go:linkname runtime_ignoreHangup internal/poll.runtime_ignoreHangup
+runtime/net_plan9.go://go:linkname runtime_unignoreHangup internal/poll.runtime_unignoreHangup
+runtime/netpoll_aix.go://go:linkname libc_poll libc_poll
+runtime/netpoll.go://go:linkname poll_runtime_pollServerInit internal/poll.runtime_pollServerInit
+runtime/netpoll.go://go:linkname poll_runtime_isPollServerDescriptor internal/poll.runtime_isPollServerDescriptor
+runtime/netpoll.go://go:linkname poll_runtime_pollOpen internal/poll.runtime_pollOpen
+runtime/netpoll.go://go:linkname poll_runtime_pollClose internal/poll.runtime_pollClose
+runtime/netpoll.go://go:linkname poll_runtime_pollReset internal/poll.runtime_pollReset
+runtime/netpoll.go://go:linkname poll_runtime_pollWait internal/poll.runtime_pollWait
+runtime/netpoll.go://go:linkname poll_runtime_pollWaitCanceled internal/poll.runtime_pollWaitCanceled
+runtime/netpoll.go://go:linkname poll_runtime_pollSetDeadline internal/poll.runtime_pollSetDeadline
+runtime/netpoll.go://go:linkname poll_runtime_pollUnblock internal/poll.runtime_pollUnblock
+runtime/netpoll_solaris.go://go:linkname libc_port_create libc_port_create
+runtime/netpoll_solaris.go://go:linkname libc_port_associate libc_port_associate
+runtime/netpoll_solaris.go://go:linkname libc_port_dissociate libc_port_dissociate
+runtime/netpoll_solaris.go://go:linkname libc_port_getn libc_port_getn
+runtime/os2_aix.go://go:linkname libc___n_pthreads libc___n_pthread
+runtime/os2_aix.go://go:linkname libc___mod_init libc___mod_init
+runtime/os2_aix.go://go:linkname libc__Errno libc__Errno
+runtime/os2_aix.go://go:linkname libc_clock_gettime libc_clock_gettime
+runtime/os2_aix.go://go:linkname libc_close libc_close
+runtime/os2_aix.go://go:linkname libc_exit libc_exit
+runtime/os2_aix.go://go:linkname libc_getpid libc_getpid
+runtime/os2_aix.go://go:linkname libc_getsystemcfg libc_getsystemcfg
+runtime/os2_aix.go://go:linkname libc_kill libc_kill
+runtime/os2_aix.go://go:linkname libc_madvise libc_madvise
+runtime/os2_aix.go://go:linkname libc_malloc libc_malloc
+runtime/os2_aix.go://go:linkname libc_mmap libc_mmap
+runtime/os2_aix.go://go:linkname libc_munmap libc_munmap
+runtime/os2_aix.go://go:linkname libc_open libc_open
+runtime/os2_aix.go://go:linkname libc_pipe libc_pipe
+runtime/os2_aix.go://go:linkname libc_raise libc_raise
+runtime/os2_aix.go://go:linkname libc_read libc_read
+runtime/os2_aix.go://go:linkname libc_sched_yield libc_sched_yield
+runtime/os2_aix.go://go:linkname libc_sem_init libc_sem_init
+runtime/os2_aix.go://go:linkname libc_sem_post libc_sem_post
+runtime/os2_aix.go://go:linkname libc_sem_timedwait libc_sem_timedwait
+runtime/os2_aix.go://go:linkname libc_sem_wait libc_sem_wait
+runtime/os2_aix.go://go:linkname libc_setitimer libc_setitimer
+runtime/os2_aix.go://go:linkname libc_sigaction libc_sigaction
+runtime/os2_aix.go://go:linkname libc_sigaltstack libc_sigaltstack
+runtime/os2_aix.go://go:linkname libc_sysconf libc_sysconf
+runtime/os2_aix.go://go:linkname libc_usleep libc_usleep
+runtime/os2_aix.go://go:linkname libc_write libc_write
+runtime/os2_aix.go://go:linkname libpthread___pth_init libpthread___pth_init
+runtime/os2_aix.go://go:linkname libpthread_attr_destroy libpthread_attr_destroy
+runtime/os2_aix.go://go:linkname libpthread_attr_init libpthread_attr_init
+runtime/os2_aix.go://go:linkname libpthread_attr_getstacksize libpthread_attr_getstacksize
+runtime/os2_aix.go://go:linkname libpthread_attr_setstacksize libpthread_attr_setstacksize
+runtime/os2_aix.go://go:linkname libpthread_attr_setdetachstate libpthread_attr_setdetachstate
+runtime/os2_aix.go://go:linkname libpthread_attr_setstackaddr libpthread_attr_setstackaddr
+runtime/os2_aix.go://go:linkname libpthread_create libpthread_create
+runtime/os2_aix.go://go:linkname libpthread_sigthreadmask libpthread_sigthreadmask
+runtime/os3_solaris.go://go:linkname libc____errno libc____errno
+runtime/os3_solaris.go://go:linkname libc_clock_gettime libc_clock_gettime
+runtime/os3_solaris.go://go:linkname libc_exit libc_exit
+runtime/os3_solaris.go://go:linkname libc_getcontext libc_getcontext
+runtime/os3_solaris.go://go:linkname libc_kill libc_kill
+runtime/os3_solaris.go://go:linkname libc_madvise libc_madvise
+runtime/os3_solaris.go://go:linkname libc_malloc libc_malloc
+runtime/os3_solaris.go://go:linkname libc_mmap libc_mmap
+runtime/os3_solaris.go://go:linkname libc_munmap libc_munmap
+runtime/os3_solaris.go://go:linkname libc_open libc_open
+runtime/os3_solaris.go://go:linkname libc_pthread_attr_destroy libc_pthread_attr_destroy
+runtime/os3_solaris.go://go:linkname libc_pthread_attr_getstack libc_pthread_attr_getstack
+runtime/os3_solaris.go://go:linkname libc_pthread_attr_init libc_pthread_attr_init
+runtime/os3_solaris.go://go:linkname libc_pthread_attr_setdetachstate libc_pthread_attr_setdetachstate
+runtime/os3_solaris.go://go:linkname libc_pthread_attr_setstack libc_pthread_attr_setstack
+runtime/os3_solaris.go://go:linkname libc_pthread_create libc_pthread_create
+runtime/os3_solaris.go://go:linkname libc_raise libc_raise
+runtime/os3_solaris.go://go:linkname libc_read libc_read
+runtime/os3_solaris.go://go:linkname libc_select libc_select
+runtime/os3_solaris.go://go:linkname libc_sched_yield libc_sched_yield
+runtime/os3_solaris.go://go:linkname libc_sem_init libc_sem_init
+runtime/os3_solaris.go://go:linkname libc_sem_post libc_sem_post
+runtime/os3_solaris.go://go:linkname libc_sem_reltimedwait_np libc_sem_reltimedwait_np
+runtime/os3_solaris.go://go:linkname libc_sem_wait libc_sem_wait
+runtime/os3_solaris.go://go:linkname libc_setitimer libc_setitimer
+runtime/os3_solaris.go://go:linkname libc_sigaction libc_sigaction
+runtime/os3_solaris.go://go:linkname libc_sigaltstack libc_sigaltstack
+runtime/os3_solaris.go://go:linkname libc_sigprocmask libc_sigprocmask
+runtime/os3_solaris.go://go:linkname libc_sysconf libc_sysconf
+runtime/os3_solaris.go://go:linkname libc_usleep libc_usleep
+runtime/os3_solaris.go://go:linkname libc_write libc_write
+runtime/os3_solaris.go://go:linkname executablePath os.executablePath
+runtime/os_darwin.go://go:linkname executablePath os.executablePath
+runtime/os_js.go://go:linkname os_sigpipe os.sigpipe
+runtime/os_js.go://go:linkname syscall_now syscall.now
+runtime/os_nacl.go://go:linkname os_sigpipe os.sigpipe
+runtime/os_nacl.go://go:linkname syscall_naclWrite syscall.naclWrite
+runtime/os_nacl.go://go:linkname syscall_now syscall.now
+runtime/os_plan9.go://go:linkname os_sigpipe os.sigpipe
+runtime/os_solaris.go://go:linkname asmsysvicall6x runtime.asmsysvicall6
+runtime/os_windows.go://go:linkname os_sigpipe os.sigpipe
+runtime/panic.go://go:linkname sync_throw sync.throw
+runtime/plugin.go://go:linkname plugin_lastmoduleinit plugin.lastmoduleinit
+runtime/proc.go://go:linkname runtime_inittask runtime..inittask
+runtime/proc.go://go:linkname main_inittask main..inittask
+runtime/proc.go://go:linkname main_main main.main
+runtime/proc.go://go:linkname os_beforeExit os.runtime_beforeExit
+runtime/proc.go:// This is exported via linkname to assembly in the syscall package.
+runtime/proc.go://go:linkname entersyscall
+runtime/proc.go:// This is exported via linkname to assembly in the syscall package.
+runtime/proc.go://go:linkname exitsyscall
+runtime/proc.go://go:linkname syscall_runtime_BeforeFork syscall.runtime_BeforeFork
+runtime/proc.go://go:linkname syscall_runtime_AfterFork syscall.runtime_AfterFork
+runtime/proc.go://go:linkname syscall_runtime_AfterForkInChild syscall.runtime_AfterForkInChild
+runtime/proc.go://go:linkname syscall_runtime_BeforeExec syscall.runtime_BeforeExec
+runtime/proc.go://go:linkname syscall_runtime_AfterExec syscall.runtime_AfterExec
+runtime/proc.go://go:linkname setMaxThreads runtime/debug.setMaxThreads
+runtime/proc.go://go:linkname sync_runtime_procPin sync.runtime_procPin
+runtime/proc.go://go:linkname sync_runtime_procUnpin sync.runtime_procUnpin
+runtime/proc.go://go:linkname sync_atomic_runtime_procPin sync/atomic.runtime_procPin
+runtime/proc.go://go:linkname sync_atomic_runtime_procUnpin sync/atomic.runtime_procUnpin
+runtime/proc.go://go:linkname sync_runtime_canSpin sync.runtime_canSpin
+runtime/proc.go://go:linkname sync_runtime_doSpin sync.runtime_doSpin
+runtime/proflabel.go://go:linkname runtime_setProfLabel runtime/pprof.runtime_setProfLabel
+runtime/proflabel.go://go:linkname runtime_getProfLabel runtime/pprof.runtime_getProfLabel
+runtime/race.go://go:linkname __tsan_init __tsan_init
+runtime/race.go://go:linkname __tsan_fini __tsan_fini
+runtime/race.go://go:linkname __tsan_proc_create __tsan_proc_create
+runtime/race.go://go:linkname __tsan_proc_destroy __tsan_proc_destroy
+runtime/race.go://go:linkname __tsan_map_shadow __tsan_map_shadow
+runtime/race.go://go:linkname __tsan_finalizer_goroutine __tsan_finalizer_goroutine
+runtime/race.go://go:linkname __tsan_go_start __tsan_go_start
+runtime/race.go://go:linkname __tsan_go_end __tsan_go_end
+runtime/race.go://go:linkname __tsan_malloc __tsan_malloc
+runtime/race.go://go:linkname __tsan_free __tsan_free
+runtime/race.go://go:linkname __tsan_acquire __tsan_acquire
+runtime/race.go://go:linkname __tsan_release __tsan_release
+runtime/race.go://go:linkname __tsan_release_merge __tsan_release_merge
+runtime/race.go://go:linkname __tsan_go_ignore_sync_begin __tsan_go_ignore_sync_begin
+runtime/race.go://go:linkname __tsan_go_ignore_sync_end __tsan_go_ignore_sync_end
+runtime/race.go://go:linkname __tsan_report_count __tsan_report_count
+runtime/race.go://go:linkname abigen_sync_atomic_LoadInt32 sync/atomic.LoadInt32
+runtime/race.go://go:linkname abigen_sync_atomic_LoadInt64 sync/atomic.LoadInt64
+runtime/race.go://go:linkname abigen_sync_atomic_LoadUint32 sync/atomic.LoadUint32
+runtime/race.go://go:linkname abigen_sync_atomic_LoadUint64 sync/atomic.LoadUint64
+runtime/race.go://go:linkname abigen_sync_atomic_LoadUintptr sync/atomic.LoadUintptr
+runtime/race.go://go:linkname abigen_sync_atomic_LoadPointer sync/atomic.LoadPointer
+runtime/race.go://go:linkname abigen_sync_atomic_StoreInt32 sync/atomic.StoreInt32
+runtime/race.go://go:linkname abigen_sync_atomic_StoreInt64 sync/atomic.StoreInt64
+runtime/race.go://go:linkname abigen_sync_atomic_StoreUint32 sync/atomic.StoreUint32
+runtime/race.go://go:linkname abigen_sync_atomic_StoreUint64 sync/atomic.StoreUint64
+runtime/race.go://go:linkname abigen_sync_atomic_SwapInt32 sync/atomic.SwapInt32
+runtime/race.go://go:linkname abigen_sync_atomic_SwapInt64 sync/atomic.SwapInt64
+runtime/race.go://go:linkname abigen_sync_atomic_SwapUint32 sync/atomic.SwapUint32
+runtime/race.go://go:linkname abigen_sync_atomic_SwapUint64 sync/atomic.SwapUint64
+runtime/race.go://go:linkname abigen_sync_atomic_AddInt32 sync/atomic.AddInt32
+runtime/race.go://go:linkname abigen_sync_atomic_AddUint32 sync/atomic.AddUint32
+runtime/race.go://go:linkname abigen_sync_atomic_AddInt64 sync/atomic.AddInt64
+runtime/race.go://go:linkname abigen_sync_atomic_AddUint64 sync/atomic.AddUint64
+runtime/race.go://go:linkname abigen_sync_atomic_AddUintptr sync/atomic.AddUintptr
+runtime/race.go://go:linkname abigen_sync_atomic_CompareAndSwapInt32 sync/atomic.CompareAndSwapInt32
+runtime/race.go://go:linkname abigen_sync_atomic_CompareAndSwapInt64 sync/atomic.CompareAndSwapInt64
+runtime/race.go://go:linkname abigen_sync_atomic_CompareAndSwapUint32 sync/atomic.CompareAndSwapUint32
+runtime/race.go://go:linkname abigen_sync_atomic_CompareAndSwapUint64 sync/atomic.CompareAndSwapUint64
+runtime/rdebug.go:import _ "unsafe" // for go:linkname
+runtime/rdebug.go://go:linkname setMaxStack runtime/debug.setMaxStack
+runtime/rdebug.go://go:linkname setPanicOnFault runtime/debug.setPanicOnFault
+runtime/runtime1.go://go:linkname setTraceback runtime/debug.SetTraceback
+runtime/runtime1.go://go:linkname reflect_typelinks reflect.typelinks
+runtime/runtime1.go://go:linkname reflect_resolveNameOff reflect.resolveNameOff
+runtime/runtime1.go://go:linkname reflect_resolveTypeOff reflect.resolveTypeOff
+runtime/runtime1.go://go:linkname reflect_resolveTextOff reflect.resolveTextOff
+runtime/runtime1.go://go:linkname reflectlite_resolveNameOff internal/reflectlite.resolveNameOff
+runtime/runtime1.go://go:linkname reflectlite_resolveTypeOff internal/reflectlite.resolveTypeOff
+runtime/runtime1.go://go:linkname reflect_addReflectOff reflect.addReflectOff
+runtime/runtime.go:     _ "unsafe" // for go:linkname
+runtime/runtime.go://go:linkname syscall_runtime_envs syscall.runtime_envs
+runtime/runtime.go://go:linkname syscall_Getpagesize syscall.Getpagesize
+runtime/runtime.go://go:linkname os_runtime_args os.runtime_args
+runtime/runtime.go://go:linkname syscall_Exit syscall.Exit
+runtime/select.go://go:linkname reflect_rselect reflect.rselect
+runtime/sema.go://go:linkname sync_runtime_Semacquire sync.runtime_Semacquire
+runtime/sema.go://go:linkname poll_runtime_Semacquire internal/poll.runtime_Semacquire
+runtime/sema.go://go:linkname sync_runtime_Semrelease sync.runtime_Semrelease
+runtime/sema.go://go:linkname sync_runtime_SemacquireMutex sync.runtime_SemacquireMutex
+runtime/sema.go://go:linkname poll_runtime_Semrelease internal/poll.runtime_Semrelease
+runtime/sema.go://go:linkname notifyListAdd sync.runtime_notifyListAdd
+runtime/sema.go://go:linkname notifyListWait sync.runtime_notifyListWait
+runtime/sema.go://go:linkname notifyListNotifyAll sync.runtime_notifyListNotifyAll
+runtime/sema.go://go:linkname notifyListNotifyOne sync.runtime_notifyListNotifyOne
+runtime/sema.go://go:linkname notifyListCheck sync.runtime_notifyListCheck
+runtime/sema.go://go:linkname sync_nanotime sync.runtime_nanotime
+runtime/signal_unix.go://go:linkname os_sigpipe os.sigpipe
+runtime/signal_unix.go:// This is exported via linkname to assembly in runtime/cgo.
+runtime/signal_unix.go://go:linkname sigpanic
+runtime/signal_unix.go:// This is exported via linkname to assembly in runtime/cgo.
+runtime/signal_unix.go://go:linkname setsigsegv
+runtime/sigqueue.go:    _ "unsafe" // for go:linkname
+runtime/sigqueue.go://go:linkname signal_recv os/signal.signal_recv
+runtime/sigqueue.go://go:linkname signalWaitUntilIdle os/signal.signalWaitUntilIdle
+runtime/sigqueue.go://go:linkname signal_enable os/signal.signal_enable
+runtime/sigqueue.go://go:linkname signal_disable os/signal.signal_disable
+runtime/sigqueue.go://go:linkname signal_ignore os/signal.signal_ignore
+runtime/sigqueue.go://go:linkname signal_ignored os/signal.signal_ignored
+runtime/sigqueue_plan9.go://go:linkname signal_recv os/signal.signal_recv
+runtime/sigqueue_plan9.go://go:linkname signalWaitUntilIdle os/signal.signalWaitUntilIdle
+runtime/sigqueue_plan9.go://go:linkname signal_enable os/signal.signal_enable
+runtime/sigqueue_plan9.go://go:linkname signal_disable os/signal.signal_disable
+runtime/sigqueue_plan9.go://go:linkname signal_ignore os/signal.signal_ignore
+runtime/sigqueue_plan9.go://go:linkname signal_ignored os/signal.signal_ignored
+runtime/stack.go:// This is exported as ABI0 via linkname so obj can call it.
+runtime/stack.go://go:linkname morestackc
+runtime/string.go:// This is exported via linkname to assembly in syscall (for Plan9).
+runtime/string.go://go:linkname gostring
+runtime/stubs.go://go:linkname reflect_memclrNoHeapPointers reflect.memclrNoHeapPointers
+runtime/stubs.go://go:linkname reflect_memmove reflect.memmove
+runtime/stubs.go://go:linkname sync_fastrand sync.fastrand
+runtime/stubs.go:// Package reflect accesses this symbol through a linkname.
+runtime/syscall2_solaris.go:import _ "unsafe" // for go:linkname
+runtime/syscall2_solaris.go://go:linkname libc_chdir libc_chdir
+runtime/syscall2_solaris.go://go:linkname libc_chroot libc_chroot
+runtime/syscall2_solaris.go://go:linkname libc_close libc_close
+runtime/syscall2_solaris.go://go:linkname libc_execve libc_execve
+runtime/syscall2_solaris.go://go:linkname libc_fcntl libc_fcntl
+runtime/syscall2_solaris.go://go:linkname libc_forkx libc_forkx
+runtime/syscall2_solaris.go://go:linkname libc_gethostname libc_gethostname
+runtime/syscall2_solaris.go://go:linkname libc_getpid libc_getpid
+runtime/syscall2_solaris.go://go:linkname libc_ioctl libc_ioctl
+runtime/syscall2_solaris.go://go:linkname libc_pipe libc_pipe
+runtime/syscall2_solaris.go://go:linkname libc_setgid libc_setgid
+runtime/syscall2_solaris.go://go:linkname libc_setgroups libc_setgroups
+runtime/syscall2_solaris.go://go:linkname libc_setsid libc_setsid
+runtime/syscall2_solaris.go://go:linkname libc_setuid libc_setuid
+runtime/syscall2_solaris.go://go:linkname libc_setpgid libc_setpgid
+runtime/syscall2_solaris.go://go:linkname libc_syscall libc_syscall
+runtime/syscall2_solaris.go://go:linkname libc_wait4 libc_wait4
+runtime/syscall_aix.go://go:linkname libc_chdir libc_chdir
+runtime/syscall_aix.go://go:linkname libc_chroot libc_chroot
+runtime/syscall_aix.go://go:linkname libc_dup2 libc_dup2
+runtime/syscall_aix.go://go:linkname libc_execve libc_execve
+runtime/syscall_aix.go://go:linkname libc_fcntl libc_fcntl
+runtime/syscall_aix.go://go:linkname libc_fork libc_fork
+runtime/syscall_aix.go://go:linkname libc_ioctl libc_ioctl
+runtime/syscall_aix.go://go:linkname libc_setgid libc_setgid
+runtime/syscall_aix.go://go:linkname libc_setgroups libc_setgroups
+runtime/syscall_aix.go://go:linkname libc_setsid libc_setsid
+runtime/syscall_aix.go://go:linkname libc_setuid libc_setuid
+runtime/syscall_aix.go://go:linkname libc_setpgid libc_setpgid
+runtime/syscall_aix.go:// This is exported via linkname to assembly in the syscall package.
+runtime/syscall_aix.go://go:linkname syscall_Syscall
+runtime/syscall_aix.go:// This is exported via linkname to assembly in the syscall package.
+runtime/syscall_aix.go://go:linkname syscall_RawSyscall
+runtime/syscall_aix.go:// This is exported via linkname to assembly in the syscall package.
+runtime/syscall_aix.go://go:linkname syscall_syscall6
+runtime/syscall_aix.go:// This is exported via linkname to assembly in the syscall package.
+runtime/syscall_aix.go://go:linkname syscall_rawSyscall6
+runtime/syscall_aix.go://go:linkname syscall_chdir syscall.chdir
+runtime/syscall_aix.go://go:linkname syscall_chroot1 syscall.chroot1
+runtime/syscall_aix.go://go:linkname syscall_close syscall.close
+runtime/syscall_aix.go://go:linkname syscall_dup2child syscall.dup2child
+runtime/syscall_aix.go://go:linkname syscall_execve syscall.execve
+runtime/syscall_aix.go://go:linkname syscall_exit syscall.exit
+runtime/syscall_aix.go://go:linkname syscall_fcntl1 syscall.fcntl1
+runtime/syscall_aix.go://go:linkname syscall_forkx syscall.forkx
+runtime/syscall_aix.go://go:linkname syscall_getpid syscall.getpid
+runtime/syscall_aix.go://go:linkname syscall_ioctl syscall.ioctl
+runtime/syscall_aix.go://go:linkname syscall_setgid syscall.setgid
+runtime/syscall_aix.go://go:linkname syscall_setgroups1 syscall.setgroups1
+runtime/syscall_aix.go://go:linkname syscall_setsid syscall.setsid
+runtime/syscall_aix.go://go:linkname syscall_setuid syscall.setuid
+runtime/syscall_aix.go://go:linkname syscall_setpgid syscall.setpgid
+runtime/syscall_aix.go://go:linkname syscall_write1 syscall.write1
+runtime/syscall_solaris.go://go:linkname pipe1x runtime.pipe1
+runtime/syscall_solaris.go:// Many of these are exported via linkname to assembly in the syscall
+runtime/syscall_solaris.go://go:linkname syscall_sysvicall6
+runtime/syscall_solaris.go://go:linkname syscall_rawsysvicall6
+runtime/syscall_solaris.go://go:linkname syscall_chdir
+runtime/syscall_solaris.go://go:linkname syscall_chroot
+runtime/syscall_solaris.go://go:linkname syscall_close
+runtime/syscall_solaris.go://go:linkname syscall_dup2
+runtime/syscall_solaris.go://go:linkname syscall_execve
+runtime/syscall_solaris.go://go:linkname syscall_exit
+runtime/syscall_solaris.go://go:linkname syscall_fcntl
+runtime/syscall_solaris.go://go:linkname syscall_forkx
+runtime/syscall_solaris.go://go:linkname syscall_gethostname
+runtime/syscall_solaris.go://go:linkname syscall_getpid
+runtime/syscall_solaris.go://go:linkname syscall_ioctl
+runtime/syscall_solaris.go://go:linkname syscall_pipe
+runtime/syscall_solaris.go://go:linkname syscall_rawsyscall
+runtime/syscall_solaris.go://go:linkname syscall_rawsyscall6
+runtime/syscall_solaris.go://go:linkname syscall_setgid
+runtime/syscall_solaris.go://go:linkname syscall_setgroups
+runtime/syscall_solaris.go://go:linkname syscall_setsid
+runtime/syscall_solaris.go://go:linkname syscall_setuid
+runtime/syscall_solaris.go://go:linkname syscall_setpgid
+runtime/syscall_solaris.go://go:linkname syscall_syscall
+runtime/syscall_solaris.go://go:linkname syscall_wait4
+runtime/syscall_solaris.go://go:linkname syscall_write
+runtime/syscall_windows.go://go:linkname compileCallback syscall.compileCallback
+runtime/syscall_windows.go://go:linkname syscall_loadsystemlibrary syscall.loadsystemlibrary
+runtime/syscall_windows.go://go:linkname syscall_loadlibrary syscall.loadlibrary
+runtime/syscall_windows.go://go:linkname syscall_getprocaddress syscall.getprocaddress
+runtime/syscall_windows.go://go:linkname syscall_Syscall syscall.Syscall
+runtime/syscall_windows.go://go:linkname syscall_Syscall6 syscall.Syscall6
+runtime/syscall_windows.go://go:linkname syscall_Syscall9 syscall.Syscall9
+runtime/syscall_windows.go://go:linkname syscall_Syscall12 syscall.Syscall12
+runtime/syscall_windows.go://go:linkname syscall_Syscall15 syscall.Syscall15
+runtime/syscall_windows.go://go:linkname syscall_Syscall18 syscall.Syscall18
+runtime/sys_darwin_32.go://go:linkname syscall_syscall9 syscall.syscall9
+runtime/sys_darwin_64.go://go:linkname syscall_syscallX syscall.syscallX
+runtime/sys_darwin.go://go:linkname syscall_syscall syscall.syscall
+runtime/sys_darwin.go://go:linkname syscall_syscall6 syscall.syscall6
+runtime/sys_darwin.go://go:linkname syscall_syscall6X syscall.syscall6X
+runtime/sys_darwin.go://go:linkname syscall_syscallPtr syscall.syscallPtr
+runtime/sys_darwin.go://go:linkname syscall_rawSyscall syscall.rawSyscall
+runtime/sys_darwin.go://go:linkname syscall_rawSyscall6 syscall.rawSyscall6
+runtime/sys_darwin.go:// This is exported via linkname to assembly in runtime/cgo.
+runtime/sys_darwin.go://go:linkname exit
+runtime/timeasm.go://go:linkname time_now time.now
+runtime/time.go://go:linkname timeSleep time.Sleep
+runtime/time.go://go:linkname startTimer time.startTimer
+runtime/time.go://go:linkname stopTimer time.stopTimer
+runtime/timestub.go:import _ "unsafe" // for go:linkname
+runtime/timestub.go://go:linkname time_now time.now
+runtime/trace.go://go:linkname trace_userTaskCreate runtime/trace.userTaskCreate
+runtime/trace.go://go:linkname trace_userTaskEnd runtime/trace.userTaskEnd
+runtime/trace.go://go:linkname trace_userRegion runtime/trace.userRegion
+runtime/trace.go://go:linkname trace_userLog runtime/trace.userLog

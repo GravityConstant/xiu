@@ -9,11 +9,14 @@ package main
 import (
 	"context"
 	"flag"
-	// "fmt"
+	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"os/signal"
 	"runtime/pprof"
+	"strconv"
+	"strings"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -55,10 +58,24 @@ func init() {
 func main() {
 	// set params
 	var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
+	// 退出等待时间
 	var wait time.Duration
 	flag.DurationVar(&wait, "graceful-timeout", time.Second*5, "the duration for which the server gracefully wait for existing connections to finish - e.g. 15s or 1m")
+	// 运行退出指令
+	var stop bool
+	flag.BoolVar(&stop, "stop", false, "call_in -stop")
 	// parse params
 	flag.Parse()
+
+	// 退出
+	if stop {
+		quit()
+		return
+	} else {
+		// 记录启动的pid,在运行目录的run/下
+		runPid()
+	}
+
 	// CPU性能监测
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
@@ -377,6 +394,38 @@ func viewDialplan(items <-chan interface{}) {
 			colorlog.Info("menuexecapp: %v\n", t)
 		default:
 			colorlog.Warning("undefined struct: %v\n", t)
+		}
+	}
+}
+
+// 在run/下记录pid
+func runPid() {
+	pid := os.Getpid()
+	log.Printf("进程 PID: %d \n", pid)
+	file, err := os.OpenFile("/var/run/call.pid", os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+	file.WriteString(strconv.Itoa(pid))
+}
+
+// pid结束进程
+func quit() {
+	b, e := ioutil.ReadFile("/var/run/call.pid")
+	if e == nil {
+		pid := strings.TrimSpace(string(b))
+		id, err := strconv.Atoi(pid)
+		if err != nil {
+			log.Println(err)
+		}
+		if id > 0 {
+			cmd := exec.Command("kill", pid)
+			if err := cmd.Run(); err != nil {
+				log.Println("no success")
+			} else {
+				log.Println("success")
+			}
 		}
 	}
 }
