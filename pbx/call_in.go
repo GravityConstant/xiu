@@ -83,8 +83,6 @@ func main() {
 			log.Fatal(err)
 		}
 		pprof.StartCPUProfile(f)
-		// stop profile
-		pprof.StopCPUProfile()
 
 	}
 	// begin
@@ -138,6 +136,8 @@ func main() {
 	}
 	// stop business work
 	cancel()
+	// stop profile
+	pprof.StopCPUProfile()
 
 	// exit
 	log.Println("shutting down")
@@ -245,6 +245,7 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 				// con.Execute("hangup", ev.UId, "")
 				return
 			}
+			colorlog.Info("resultDTMF: %v\n", resultDTMF)
 			if resultDTMF == "success" {
 				dtmfDigits := ev.Get("variable_foo_dtmf_digits")
 				destinationNumber := ev.Get("Caller-Destination-Number")
@@ -269,7 +270,9 @@ func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
 				}
 			} else if resultDTMF == "failure" || resultDTMF == "" {
 				// 彩铃不存在时，resultDTMF为空
-				con.Execute("hangup", ev.UId, "")
+				if _, err := con.Execute("hangup", ev.UId, ""); err != nil {
+					util.Error("call_in.go", "resultDTMF failure", err)
+				}
 			}
 		} else if ev.App == "bridge" {
 			// 挂机还是进行满意度调查

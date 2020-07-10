@@ -537,6 +537,15 @@ func GetMenuByExtensionResult(menuDetail []*models.Menu, extension string) *enti
 			mm[item.Extension] = &menu
 		}
 	}
+	// 设置regexp，根据每个数字填
+	// 首层不需要添加返回上级*号键
+	for _, item := range mm {
+		digits := []string{}
+		for _, e := range item.Entrys {
+			digits = append(digits, e.Digits)
+		}
+		item.Regexp = strings.Join(digits, "|")
+	}
 	// 保存到redis
 	if util.CheckRedis() {
 		for _, key := range keys {
