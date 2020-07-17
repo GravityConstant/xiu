@@ -99,13 +99,17 @@ func main() {
 
 		con, err := esl.NewConnection("127.0.0.1:8021", handler)
 		if err != nil {
-			log.Fatal("ERR connecting to freeswitch:", err)
+			util.Error("call_in.go", "ERR connecting to freeswitch:", err)
 		}
-		if err := con.HandleEvents(ctx); err != nil {
+		err = con.HandleEvents(ctx)
+		if err != nil {
 			util.Error("call_in.go", "handle events error", err)
-			time.Sleep(time.Second)
-			goto RESTART
+		} else if !con.Connected {
+			util.Error("call_in.go", "disconnect", err)
+		} else {
+			util.Error("call_in.go", "read event error", err)
 		}
+		goto RESTART
 	}()
 
 	// 优雅的退出CTRL+C
@@ -151,11 +155,11 @@ func (h *Handler) OnConnect(con *esl.Connection) {
 }
 
 func (h *Handler) OnDisconnect(con *esl.Connection, ev *esl.Event) {
-	log.Println("esl disconnected:", ev)
+	util.Warning("call_in.go", "esl disconnected", "")
 }
 
 func (h *Handler) OnClose(con *esl.Connection) {
-	log.Println("esl connection closed")
+	util.Warning("call_in.go", "esl connection closed", "")
 }
 
 func (h *Handler) OnEvent(con *esl.Connection, ev *esl.Event) {
