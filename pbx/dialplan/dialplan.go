@@ -569,10 +569,16 @@ func ExecuteBridge(con *esl.Connection, UId string, items <-chan interface{}) {
 			case entity.Action:
 				switch t.App {
 				case "bridge":
-					con.Execute(t.App, UId, t.Data)
+					if _, err := con.Execute(t.App, UId, t.Data); err != nil {
+						util.Error("dialplan/dialplan.go", "execute bridge", err)
+					}
 				case "playback":
-					con.ExecuteSync(t.App, UId, t.Data)
-					con.Execute("hangup", UId, "")
+					if _, err := con.ExecuteSync(t.App, UId, t.Data); err != nil {
+						util.Error("dialplan/dialplan.go", "execute playback", err)
+					}
+					if _, err := con.Execute("hangup", UId, ""); err != nil {
+						util.Error("dialplan/dialplan.go", "execute hangup", err)
+					}
 				}
 			}
 		}

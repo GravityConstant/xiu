@@ -213,11 +213,11 @@ func (con *Connection) HandleEvents(ctx context.Context) error {
 					return nil
 				}
 				// 原来发生错误，直接断开connect
-				// con.Close()
-				// return fmt.Errorf("event read loop: %v\n", err)
+				con.Close()
+				return fmt.Errorf("event read loop: %v\n", err)
 				// ev返回一个Err
-				con.err <- err
-				continue
+				// con.err <- err
+				// continue
 			}
 			switch ev.Type {
 			case EventError:

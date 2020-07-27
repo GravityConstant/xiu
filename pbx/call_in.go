@@ -92,7 +92,6 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	// business code
 	go func() {
-	RESTART:
 		util.Info("call_in.go", "start", "////////////////////////////////////////////////////")
 		util.Info("call_in.go", "start", "//                event                           //")
 		util.Info("call_in.go", "start", "////////////////////////////////////////////////////")
@@ -103,13 +102,10 @@ func main() {
 		}
 		err = con.HandleEvents(ctx)
 		if err != nil {
+			cancel()
 			util.Error("call_in.go", "handle events error", err)
-		} else if !con.Connected {
-			util.Error("call_in.go", "disconnect", err)
-		} else {
-			util.Error("call_in.go", "read event error", err)
+			os.Exit(0)
 		}
-		goto RESTART
 	}()
 
 	// 优雅的退出CTRL+C
