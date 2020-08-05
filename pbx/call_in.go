@@ -102,7 +102,6 @@ func main() {
 		}
 		err = con.HandleEvents(ctx)
 		if err != nil {
-			cancel()
 			util.Error("call_in.go", "handle events error", err)
 			os.Exit(0)
 		}

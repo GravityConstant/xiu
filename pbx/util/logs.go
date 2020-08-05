@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/natefinch/lumberjack"
 	"github.com/sirupsen/logrus"
 )
 
@@ -85,8 +86,13 @@ func InitLog() {
 				log.Panic(err)
 			}
 		}
-		// logTest()
+	} else if runmode == "product" {
+		logpbx.SetOutput(&lumberjack.Logger{
+			Filename: "logs/pbx.log",
+			MaxSize:  11,
+		})
 	}
+	// logTest()
 }
 
 func Trace(args ...interface{}) {
@@ -169,7 +175,7 @@ func logTest() {
 	for i := 0; i < 100; i++ {
 		wg.Add(1)
 		go func(i int) {
-			for j := 0; j < 100; j++ {
+			for j := 0; j < 1000; j++ {
 				logpbx.Info("Thread:", i, " value:", j)
 				time.Sleep(10 * time.Millisecond)
 			}
@@ -206,13 +212,16 @@ func (p *logFileWriter) Write(data []byte) (n int, err error) {
 	//文件最大 64K byte
 	if p.size > maxSize {
 		filename := p.file.Name()
+		fmt.Println("log filename:", filename)
 		p.file.Close()
 		cmd := exec.Command("mv", filename, getTimeFileAbsPath())
 		if err = cmd.Run(); err != nil {
-			logpbx.Error(err)
+			fmt.Errorf("mv log file error:", err)
 		}
-		logpbx.Warn("log file full")
-		p.file, _ = os.OpenFile(filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE|os.O_SYNC, 0600)
+		p.file, err = os.OpenFile(filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE|os.O_SYNC, 0666)
+		if err != nil {
+			fmt.Errorf("new log file error:", err)
+		}
 		p.size = 0
 	}
 	return n, e
